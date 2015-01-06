@@ -2,11 +2,12 @@
 layout: post
 title: "Sending Morning Emails"
 date: 2012-11-15 12:48:15 -0800
-comments: true
+comments: false
 categories:
-publeshed: false
 ---
 
+
+NOTE: I originally wrote this when I was still working on [Stride](http://strideapp.com). Here is the [original post](https://web.archive.org/web/20130522081001/https://strideapp.com/blog/2012/11/sending-morning-emails/).
 
 Reliably delivering time-based emails (daily, weekly, etc.) to users has always been a little tricky for web-based applications. There are multiple possible failure points, and we need to contend with different time zones.
 
@@ -29,9 +30,10 @@ The only way to ensure people get their emails in the morning for them is to kno
 
 Your browser knows what your time zone offset is, and your daylight savings configuration. So, thanks to [jstimezonedetect](https://bitbucket.org/pellepim/jstimezonedetect), we can make a pretty good guess as to your time zone setting using JavaScript.
 
-![autodetect_tz](autodetect_tz.png)
+![Diagram of timezone detection](/images/autodetect_tz.png)
+{% img /images/autodetect_tz.png Diagram of timezone detection %}
 
-``` javascript
+``` javascript Using jstz jstimezonedetect and jQuery to send the timezone to the server
 var timezone = jstz.determine_timezone();
 var timezone_name = timezone.name();
 
@@ -42,12 +44,12 @@ $.ajaxPrefilter(function(options, originalOptions, xhr) {
 
 We can save the users "automatic" time zone like this (the rest of the code samples are written for Ruby on Rails, but the concepts should apply to any web-based environment):
 
-``` ruby
+``` ruby Storing user timezones; This can be placed in a before_filter
 js_timezone = request.env['HTTP_X_TIMEZONE']
 if js_timezone.present? && UserTimezone::TIMEZONE_TZNAMES.include?(js_timezone)
   current_user.update_attributes auto_timezone: js_timezone
 end
-``
+```
 
 In case we ever need to overwrite the automatic configuration for any reason, we have a separate column in the database that allows us to do so.
 
@@ -55,7 +57,7 @@ In case we ever need to overwrite the automatic configuration for any reason, we
 
 Now that we have most user's time zones, we can send them their Monday morning and task reminder emails at 7am in their time zone. Here's how that works.
 
-We run a cron task every hour. Using the Monday mailer as an example, the first thing it does is answer the following question: “In what time zones is it now 7am on Monday?” Here is that question in code:
+We run a cron task every hour. Using the Monday mailer as an example, the first thing it does is answer the following question: "In what time zones is it now 7am on Monday?" Here is that question in code:
 
 ``` ruby
 TIMEZONES = ActiveSupport::TimeZone.all
@@ -77,7 +79,7 @@ def self.user_ids_in_timezones(timezones)
   return [] if timezones.empty?
 
   timezones << nil if timezones.include?('Etc/UTC')
-  select(:user_id).where(timezone: timezones).map(&:user_id)
+  where(timezone: timezones).pluck(:user_id)
 end
 ```
 
@@ -85,11 +87,11 @@ Users without a time zone configured will get their email at 7am UTC.
 
 In the case of task reminders, we store the time zone and date on each reminder so that we can do an indexed query given the appropriate time zones on any given date.
 
-### Queuing up the emails
+### Queueing up the emails
 
-Now that we have a list of users that need Monday morning emails (or task reminders that need to be sent), we can go ahead and fire off those emails. In order to track the progress and hopeful success of each email, we queue each email individually with Resque, a background job runner written by the awesome folks at Github.
+Now that we have a list of users that need Monday morning emails (or task reminders that need to be sent), we can go ahead and fire off those emails. In order to track the progress and hopeful success of each email, we queue each email individually with [Resque](https://github.com/blog/542-introducing-resque), a background job runner written by the awesome folks at Github.
 
-``` ruby
+``` ruby Queueing up emails
 UserTimezone.user_ids_in_timezones(timezones).each do |user_id|
   puts "Queuing the MondayMailer to #{ user_id } at #{ time }!"
   Resque.enqueue(::MondayMailer, user_id)
@@ -141,7 +143,7 @@ The process of delivering emails is something like this:
 3. The resque job compiles a list of users or task reminders that need emails based on the time it was meant to run
 4. The resulting worker queues up another resque job for each email that actually needs to be delivered
 
-![timezone_queue](timezone_queue.png)
+![Queueing process diagram](/images/timezone_queue.png)
 
 Although it's a fairly complex system for what seems like a simple task, it's important to us that our users can trust they'll get their email when they expect it. This way we can provide a better overall user experience.
 
