@@ -1,13 +1,16 @@
 ---
 layout: post
 title: "Sending Morning Emails"
-date: 2012-11-15 12:48:15 -0800
-comments: false
+date: 2012-11-15
+updated: 2015-01-05
+date_formatted: November 15, 2012
+updated_formatted: Janurary 1, 2015
+comments: true
 categories:
 ---
 
 
-NOTE: I originally wrote this when I was still working on [Stride](http://strideapp.com). Here is the [original post](https://web.archive.org/web/20130522081001/https://strideapp.com/blog/2012/11/sending-morning-emails/).
+NOTE: I originally wrote this when I was still working on [Stride](http://strideapp.com). I've reposted it here for posterity. Here is the [original post](https://web.archive.org/web/20130522081001/https://strideapp.com/blog/2012/11/sending-morning-emails/).
 
 Reliably delivering time-based emails (daily, weekly, etc.) to users has always been a little tricky for web-based applications. There are multiple possible failure points, and we need to contend with different time zones.
 
