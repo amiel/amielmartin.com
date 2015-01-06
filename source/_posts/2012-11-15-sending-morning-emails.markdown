@@ -33,7 +33,6 @@ The only way to ensure people get their emails in the morning for them is to kno
 
 Your browser knows what your time zone offset is, and your daylight savings configuration. So, thanks to [jstimezonedetect](https://bitbucket.org/pellepim/jstimezonedetect), we can make a pretty good guess as to your time zone setting using JavaScript.
 
-![Diagram of timezone detection](/images/autodetect_tz.png)
 {% img /images/autodetect_tz.png Diagram of timezone detection %}
 
 ``` javascript Using jstz jstimezonedetect and jQuery to send the timezone to the server
