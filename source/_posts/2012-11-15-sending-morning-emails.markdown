@@ -3,7 +3,6 @@ layout: post
 title: "Sending Morning Emails"
 date: 2012-11-15
 updated: 2015-01-05
-date_formatted: November 15, 2012
 updated_formatted: Janurary 1, 2015
 comments: true
 categories:
