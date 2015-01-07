@@ -17,7 +17,7 @@ Update: This has been released as a gem: [Olson](https://github.com/carnesmedia/
 
 When my models have an attribute that matters to the code (like `Admin#role` or `User#status`), I like to store the value as a string that makes sense as an identifier. For example, `User#status` might be `'active'` or `'awaiting_approval'`. However, when it comes time to render the admin's role or the users status in the view, we want to show 'Awaiting approval' instead of 'awaiting_approval'. Another example of this sort of thing is the `#type` attribute for STI.
 
-Ok, this isn’t too hard, we can just use `#humanize`. But, here’s what happens:
+Ok, this isn’t too hard, we can just use `#humanize`. But, here’s what happens: <!--More-->
 
 ``` erb In some views
 # Show a user-friendly version of our identifier
