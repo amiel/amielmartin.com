@@ -4,7 +4,7 @@ title: "Using I18n and Draper to Render Database Attributes"
 date: 2011-11-04 20:27:04 -0800
 date_formatted: November 4, 2011
 comments: true
-categories:
+categories: rails
 published: true
 ---
 

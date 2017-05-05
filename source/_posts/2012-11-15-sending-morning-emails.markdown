@@ -5,7 +5,7 @@ date: 2012-11-15
 updated: 2015-01-05
 updated_formatted: Janurary 1, 2015
 comments: true
-categories:
+categories: rails
 ---
 
 
