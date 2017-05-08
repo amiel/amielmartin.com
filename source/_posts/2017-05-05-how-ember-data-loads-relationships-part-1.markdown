@@ -18,7 +18,7 @@ In this part, we'll explore how Ember Data response to a few different common sc
 
 <!--More-->
 
-## Some Housekeeping
+## Housekeeping
 
 Before we get started, let's talk about scope. All examples here will be in `JSONAPI`. In most cases, this will translate pretty easily for users of `RESTAdapter` or `ActiveModelAdapter`.
 
@@ -103,7 +103,7 @@ findHasMany(store, snapshot, link, relationship) {
 
 Using links is arguably the simplest way to load relationships with Ember Data if your server supports it. It is also an extremely useful adapter hook to get around some limitations in Ember Data as we will see in a later post in this series.
 
-## Resource Linkage
+## Including relationship ids
 
 It is also possible to include the ids for each object in a relationship. `JSONAPI` calls this [`Resource Linkage`](http://jsonapi.org/format/#document-resource-object-linkage).
 
@@ -152,7 +152,7 @@ post.get('comments');
 
 As before, this bahavior can also be configured. This time by overriding the `findRecord` adapter hook in the comments adapter.
 
-#### [`app/adapters/post.js`](https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5)
+#### [`app/adapters/comment.js`](https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5)
 
 ```javascript
 findRecord(store, type, id, snapshot) {
@@ -161,8 +161,55 @@ findRecord(store, type, id, snapshot) {
   // this hook will get called three times in each call, each with an
   // appropritate id and snapshot
   // id === snapshot.id
+
+  return this._super(...arguments);
 },
 ```
 
 Preloading the ids for relationships like this is nice when it makes sense for the interface to show placeholders for each item in the relationship and load details later.
 
+### Bonus Section
+
+You might be wondering, is it a good idea to load each model of my `hasMany` relationship in a separate ajax request?
+
+In most cases, it is not a good idea. This is called the N+1 problem. Meaning, to load a post and its comments, we would need N+1 requests, where N is the number of comments on the post.
+
+Fear not, as once again, Ember Data has your back. In order to turn N+1 requests in to two, all you need to do is set [`coalesceFindRequests`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#property_coalesceFindRequests). In this case, a different adapter hook will be called. Instead of `findRecord`, [`findMany`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findMany) will be called with an array of ids.
+
+#### `app/adapters/comment.js`
+
+```javascript
+coalesceFindRequests: true,
+findMany(store, type, ids, snapshots) {
+  // ids === ['21', '22', '23']
+  return this._super(...arguments);
+},
+```
+
+This will, by default, cause the following ajax request:
+
+```javascript
+post.get('comments');
+// GET /comments?filter[id]=21,22,23
+```
+
+## No Links, No Ids
+
+So, what if the post data doesn't contain any relationship data, is it still possible to configure a way to load relationship data?
+
+#### Post #3 example
+
+```json
+{
+  "id": 3,
+  "type": "post",
+  "attributes": {
+    "title": "This is post #3",
+    "body": "This post's has no comments",
+  },
+}
+```
+
+The short answer is no, Ember Data has no facility for this. The long answer is of course, anything is possible, but it will take some hacks.
+
+We'll take a look at how deal with this situation in Part 2.
