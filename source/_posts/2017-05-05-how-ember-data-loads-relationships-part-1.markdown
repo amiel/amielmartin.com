@@ -111,7 +111,7 @@ It is also possible to include the ids for each object in a relationship. `JSONA
 >
 > -- http://jsonapi.org/format/#document-resource-object-linkage
 
-Let's see how this works with our next example: Post #2.
+Let's see how this works with our next blog post example: Post #2.
 
 Unlike Post #1, Post #2 has "data" instead of "links" in the "comments" section. Here's what it looks like:
 
@@ -122,7 +122,7 @@ Unlike Post #1, Post #2 has "data" instead of "links" in the "comments" section.
   "id": 2,
   "type": "post",
   "attributes": {
-    "title": "This is post #2",
+    "title": "This is blog post #2",
     "body": "This post's comments relationship has a data section",
   },
   "relationships": {
@@ -137,7 +137,7 @@ Unlike Post #1, Post #2 has "data" instead of "links" in the "comments" section.
 }
 ```
 
-Notice that each comment is a ["Resource Identifier Object"](http://jsonapi.org/format/#document-resource-identifier-objects), meaning that it has an `id` and a `type`, but not `attributes`.
+Notice that each comment is a ["Resource Identifier Object"](http://jsonapi.org/format/#document-resource-identifier-objects), meaning that it has an `id` and a `type`, but no `attributes`.
 
 With this post, Ember Data will load each comment through the comments adapter by calling its `findRecord` hook.
 
@@ -150,7 +150,7 @@ post.get('comments');
 // GET /comments/23
 ```
 
-As before, this bahavior can also be configured. This time by overriding the `findRecord` adapter hook in the comments adapter.
+As before, this bahavior can also be configured, this time by overriding the `findRecord` adapter hook in the comments adapter.
 
 #### [`app/adapters/comment.js`](https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5)
 
@@ -159,7 +159,7 @@ findRecord(store, type, id, snapshot) {
   // Here, type is an object representing the model class.
   // type.modelName === 'comment'
   // this hook will get called three times in each call, each with an
-  // appropritate id and snapshot
+  // appropriate id and snapshot
   // id === snapshot.id
 
   return this._super(...arguments);
@@ -172,9 +172,9 @@ Preloading the ids for relationships like this is nice when it makes sense for t
 
 You might be wondering, is it a good idea to load each model of my `hasMany` relationship in a separate ajax request?
 
-In most cases, it is not a good idea. This is called the N+1 problem. Meaning, to load a post and its comments, we would need N+1 requests, where N is the number of comments on the post.
+In most cases, it is not a good idea. This is called the [N+1 problem](insert link). Meaning, to load a blog post and its comments, we would need N+1 requests, where N is the number of comments on the post.
 
-Fear not, as once again, Ember Data has your back. In order to turn N+1 requests in to two, all you need to do is set [`coalesceFindRequests`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#property_coalesceFindRequests). In this case, a different adapter hook will be called. Instead of `findRecord`, [`findMany`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findMany) will be called with an array of ids.
+Fear not, as once again, Ember Data has your back. In order to turn N+1 requests into two, all you need to do is set [`coalesceFindRequests`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#property_coalesceFindRequests). In this case, a different adapter hook will be called. Instead of `findRecord`, [`findMany`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findMany) will be called with an array of ids.
 
 #### `app/adapters/comment.js`
 
