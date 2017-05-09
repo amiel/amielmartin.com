@@ -55,7 +55,7 @@ export default DS.Model.extend({
 
 `JSONAPI` allows for specifying that a [relationship should be loaded via a url](http://jsonapi.org/format/#document-resource-object-related-resource-links) specified by the server.
 
-Let's see how this works with our first example: Post #1.
+Let's see how this works with our first example blog post: Post #1.
 
 #### [Post #1 data](https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/post.js#L13-L25)
 
@@ -64,7 +64,7 @@ Let's see how this works with our first example: Post #1.
   "id": 1,
   "type": "post",
   "attributes": {
-    "title": "This is post #1",
+    "title": "This is blog post #1",
     "body": "This post's comments relationship has a links section",
   },
   "relationships": {
@@ -75,7 +75,7 @@ Let's see how this works with our first example: Post #1.
 }
 ```
 
-In this example, because the `comments` key under `relationships` matches the name of the `comments` relationship defined in our post model, Ember Data will use the link provided to load data for that relationship. The [default](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findHasMany) [implementation](https://github.com/emberjs/data/blob/v2.13.1/addon/adapters/rest.js#L641-L693)  adds any url prefix configuration to the provided url (such as the host) and fires off an ajax request to the provided link.
+In this example, because the `comments` key under `relationships` matches the name of the `comments` relationship defined in our post model, Ember Data will use the provided link to load data for that relationship. The [default](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findHasMany) [implementation](https://github.com/emberjs/data/blob/v2.13.1/addon/adapters/rest.js#L641-L693)  adds any url prefix configuration to the provided url (such as the host) and fires off an ajax request to the provided link.
 
 Therefore, accessing this relationship would cause the following ajax request:
 
@@ -101,7 +101,7 @@ findHasMany(store, snapshot, link, relationship) {
 },
 ```
 
-Using links is arguably the simplest way to load relationships with Ember Data if your server supports it. It is also an extremely useful adapter hook to get around some limitations in Ember Data as we will see in a later post in this series.
+Using links is arguably the simplest way to load relationships with Ember Data if your server supports it. It is also an extremely useful adapter hook to get around some limitations in Ember Data, as we will see in a later post in this series.
 
 ## Including relationship ids
 
