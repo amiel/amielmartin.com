@@ -51,7 +51,7 @@ export default DS.Model.extend({
 });
 ```
 
-## `links`
+## Links
 
 `JSONAPI` allows for specifying that a [relationship should be loaded via a url](http://jsonapi.org/format/#document-resource-object-related-resource-links) specified by the server.
 
