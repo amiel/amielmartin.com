@@ -172,7 +172,7 @@ Preloading the ids for relationships like this is nice when it makes sense for t
 
 You might be wondering, is it a good idea to load each model of my `hasMany` relationship in a separate ajax request?
 
-In most cases, it is not a good idea. This is called the [N+1 problem](insert link). Meaning, to load a blog post and its comments, we would need N+1 requests, where N is the number of comments on the post.
+In most cases, it is not a good idea. This is called the [N+1 problem](https://www.sitepoint.com/silver-bullet-n1-problem/). Meaning, to load a blog post and its comments, we would need N+1 requests, where N is the number of comments on the post.
 
 Fear not, as once again, Ember Data has your back. In order to turn N+1 requests into two requests, all you need to do is set [`coalesceFindRequests`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#property_coalesceFindRequests). In this case, a different adapter hook will be called. Instead of `findRecord`, [`findMany`](https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findMany) will be called with an array of ids.
 
