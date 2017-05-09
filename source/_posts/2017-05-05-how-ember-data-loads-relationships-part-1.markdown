@@ -12,9 +12,9 @@ categories:
 
 <!-- TODO: ember version badge 2.13.1 -->
 
-Ember Data has two main ways to load async relationship data through adapters. It is not always obvious when or why Ember Data calls the adapter hooks that it does, or doesn't.
+Ember Data has two main ways to load asynchronous relationship data through adapters. It is not always obvious when or why Ember Data calls the adapter hooks that it does, or doesn't.
 
-In this part, we'll explore how Ember Data response to a few different common scenarios. In later posts we'll look at some less-straight-forward examples.
+In Part 1, we'll explore how Ember Data responds to a few different common scenarios. In later posts we'll look at some less-straight-forward examples.
 
 <!--More-->
 
@@ -26,7 +26,7 @@ Before we get started, let's talk about scope. All examples here will be in `JSO
 
 For all of the following examples, we'll be using the simple blog with posts and comments example. This is an easy relationship to use without having to explain any domain concepts.
 
-There is example project at [github.com/amiel/ember-data-relationships-examples](https://github.com/amiel/ember-data-relationships-examples/tree/part-1), if you'd like to follow along with working examples. Many examples are trimmed for brevity and the full source can be easily found by clicking on the filename.
+The code for these examples can be found at [github.com/amiel/ember-data-relationships-examples](https://github.com/amiel/ember-data-relationships-examples/tree/part-1). Many examples are trimmed for brevity and the full source can be easily found by clicking on the filename.
 
 Examples of `JSONAPI` data are hard-coded in [the adapters](https://github.com/amiel/ember-data-relationships-examples/tree/part-1/app/adapters).
 
