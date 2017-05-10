@@ -10,7 +10,10 @@ categories:
   - ember-data
 ---
 
-<!-- TODO: ember version badge 2.13.1 -->
+<iframe
+width="178" height="24" style="border:0px"
+src="https://mixonic.github.io/ember-community-versions/2017/05/05/how-ember-data-loads-relationships-part-1.html">
+</iframe>
 
 Ember Data has two main ways to load asynchronous relationship data through adapters. It is not always obvious when or why Ember Data calls the adapter hooks that it does, or doesn't.
 
