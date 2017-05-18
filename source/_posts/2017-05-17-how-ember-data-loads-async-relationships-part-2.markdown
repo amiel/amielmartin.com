@@ -41,11 +41,11 @@ This blog post has both related `links` and `ids` in `data`.
         "related": { "href": "/posts/4/comments" },
       },
       "data": [
-        { "id": 41, "type": 'comment' },
+        { "id": 41, "type": "comment" },
       ],
     },
   },
-},
+}
 ```
 
 In this case, Ember Data will prefer the `data` and call [`findRecord` in the comment adapter](https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5). To understand why, let's look at the codepath for loading this relationship. This [`hasMany` macro](https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/has-many.js#L146) defines a computed property, that loads an the [`has-many` relationship state](https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js) and [`calls getRecords`](https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/has-many.js#L147) on it.
