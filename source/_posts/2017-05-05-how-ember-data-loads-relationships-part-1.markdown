@@ -198,7 +198,7 @@ post.get('comments');
 
 ## No Links, No Ids
 
-So, what if the post data doesn't contain any relationship data, is it still possible to configure a way to load relationship data?  
+So, what if the post data doesn't contain any relationship data, is it still possible to configure a way to load relationship data?
 
 Let's look at another blog post example: Post #3.
 
@@ -217,4 +217,4 @@ Let's look at another blog post example: Post #3.
 
 The short answer is "no", Ember Data has no facility for this. The long answer is "of course, anything is possible", but it will take some hacks.
 
-We'll take a look at how deal with this situation in Part 2.
+We'll take a look at how deal with this situation later in this series.
