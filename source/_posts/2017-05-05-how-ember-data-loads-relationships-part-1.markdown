@@ -202,7 +202,7 @@ So, what if the post data doesn't contain any relationship data, is it still pos
 
 Let's look at another blog post example: Post #3.
 
-#### Post #3 example
+#### [Post #3 data](https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/post.js#L45-L52)
 
 ```json
 {
