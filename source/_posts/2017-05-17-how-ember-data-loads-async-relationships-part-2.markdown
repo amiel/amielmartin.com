@@ -11,19 +11,19 @@ categories:
 
 <iframe width="178" height="24" style="border:0px" src="https://mixonic.github.io/ember-community-versions/2017/05/17/how-ember-data-loads-async-relationships-part-2.html"></iframe>
 
-If you haven't already read [Part 1](http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/), I recommend doing that now, as this continues right where we left off.
+If you haven't already read [Part 1][part-1], I recommend doing that now, as this continues right where we left off.
 
-In [Part 1](http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/), we explored how Ember Data responds to a few different common scenarios. In Part 2, we'll look at some less-straight-forward examples. In a later posts we'll look at how to get around some limitations of Ember Data.
+In [Part 1][part-1], we explored how Ember Data responds to a few different common scenarios. In Part 2, we'll look at some less-straight-forward examples. In a later posts we'll look at how to get around some limitations of Ember Data.
 
 <!--More-->
 
 ## Links _and_ Data with ids
 
-In [Part 1](http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/), we talked about what happens when data is loaded via relationship `links`, when a relationships `ids` are already loaded, and what happens when neither are present.
+In [Part 1][part-1], we talked about what happens when data is loaded via relationship `links`, when a relationships `ids` are already loaded, and what happens when neither are present.
 
 So, what happens if there are _both_ `links` and `ids`?
 
-#### [Post #4 data](https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71)
+#### [Post #4 data][post-4]
 
 This blog post has both related `links` and `ids` in `data`.
 
