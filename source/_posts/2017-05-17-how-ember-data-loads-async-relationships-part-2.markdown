@@ -52,6 +52,12 @@ In this case, Ember Data will prefer the `data` and call [`findRecord` in the co
 
 Anyway, [`getRecords`][has-many-state-get-records] is where we get to the meat of the logic. [`getRecords`][has-many-state-get-records] checks if there is [a related link][getRecords-link-check], which, in the case of blog post #4, there is. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
 
+Therefore, accessing the comments relationship on post #4 will load the comment in `data`:
+
+```javascript
+post.get('comments').mapBy('message') // => ["Comment 41 was loaded via findRecord in the comment adapter"]
+```
+
 Note, however, that if the post data gets reloaded and only has a `links` section, it will correctly [set `hasLoaded` to false][] so that the next attempt to load the relationship will use the link.
 
 ## Existing Data
@@ -80,7 +86,34 @@ Let's assume we have the previous post ([post #4][post-4]) loaded, and when we r
 
 What happens with this example when we try to load the comments relationship?
 
-Because
+Because the [link hasn't changed][link-changed-check], it will not cause `hasLoaded` to be [set to false][set-hasLoaded-false]. So accessing the comments relationship after reloading the blog post will continue to use the already loaded data.
+
+However, if the value of the related link changes, it will reload the relationship. For example, if reloading the post returns a link with adifferent url:
+
+```json
+{
+  "id": 4,
+  "type": "post",
+  "attributes": {
+    "title": "This is blog post #4",
+    "body": "This post has mixed links and data",
+  },
+  "relationships": {
+    "comments": {
+      "links": {
+        "related": { "href": "/posts/4/comments?1" },
+      },
+    },
+  },
+}
+```
+
+Then accessing the relationship will trigger reloading with the `link`:
+
+```javascript
+post.get('comments').mapBy('message')
+// => ["Comment 41 was loaded via findHasMany in the post adapter", "Comment 42 was loaded via findHasMany in the post adapter"]
+```
 
 
 [Part 1]: http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/
@@ -102,4 +135,6 @@ Because
 [call-to-findRecords]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js#L220
 [call-to-findLink]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js#L222
 [set `hasLoaded` to false]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L399
-
+[link-changed-check]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L377
+[set-hasLoaded-false]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L399
+[cache-busting query param]: https://stackoverflow.com/questions/9692665/cache-busting-via-params
