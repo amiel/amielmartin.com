@@ -48,9 +48,9 @@ This blog post has both related `links` and `ids` in `data`.
 }
 ```
 
-In this case, Ember Data will prefer the `data` and call [`findRecord` in the comment adapter][]. To understand why, let's look at the codepath for loading this relationship. The [`hasMany` macro][] defines a computed property that loads an the [`has-many` relationship state][] and [calls `getRecords`][] on it.
+In this case, Ember Data will prefer the `data` and call [`findRecord` in the comment adapter][]. To understand why, let's look at the codepath for loading this relationship. The [`hasMany` macro][] defines a computed property that loads an the [`has-many` relationship state][] and [calls `getRecords`][] on it. Ember Data has [some internal objects][relationship state objects] that it uses to keep track of the state of each relationship. These [relationship state objects][] keep track of the relationship settings (like [`{ async: false }`][async setting]), the [actual records][] in the relationship, the [related `link`][], and whether the relationship [has data][relationship-state-hasData] and if it [has been loaded][relationship-state-hasLoaded].
 
-This is where we get to the meat of the logic. [`getRecords`][has-many-state-get-records] checks if there is [a related link][getRecords-link-check], which, in the case of blog post #4, there is. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
+Anyway, [`getRecords`][has-many-state-get-records] is where we get to the meat of the logic. [`getRecords`][has-many-state-get-records] checks if there is [a related link][getRecords-link-check], which, in the case of blog post #4, there is. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
 
 Note, however, that if the post data gets reloaded and only has a `links` section, it will correctly [set `hasLoaded` to false][] so that the next attempt to load the relationship will use the link.
 
@@ -80,6 +80,7 @@ Let's assume we have the previous post ([post #4][post-4]) loaded, and when we r
 
 What happens with this example when we try to load the comments relationship?
 
+Because
 
 
 [Part 1]: http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/
@@ -89,6 +90,12 @@ What happens with this example when we try to load the comments relationship?
 [`hasMany` macro]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/has-many.js#L146-L148
 [`has-many` relationship state]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js
 [calls `getRecords`]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/has-many.js#L147
+[relationship state objects]: https://github.com/emberjs/data/tree/v2.13.1/addon/-private/system/relationships/state
+[async setting]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L66
+[related `link`]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L71
+[actual records]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L60
+[relationship-state-hasData]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L73
+[relationship-state-hasLoaded]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L74
 [getRecords-link-check]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js#L218
 [hasLoaded-check]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js#L219
 [setHasLoaded-in-push]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L397
