@@ -60,7 +60,7 @@ post.get('comments').mapBy('message') // => ["Comment 41 was loaded via findReco
 
 Note, however, that if the post data gets reloaded and only has a `links` section, it will correctly [set `hasLoaded` to false][] so that the next attempt to load the relationship will use the link.
 
-## Existing Data
+## Reloading `links`
 
 Speaking of subsequent loads of relationship data, let's look at how Ember Data deals with reloading relationships. There are a lot of possible scenarios, so let's arbitrarily start where we just were: an updated link.
 
@@ -72,7 +72,7 @@ Let's assume we have the previous post ([post #4][post-4]) loaded, and when we r
   "type": "post",
   "attributes": {
     "title": "This is blog post #4",
-    "body": "This post has mixed links and data",
+    "body": "This blog post has been updated",
   },
   "relationships": {
     "comments": {
@@ -96,7 +96,7 @@ However, if the value of the related link changes, it will reload the relationsh
   "type": "post",
   "attributes": {
     "title": "This is blog post #4",
-    "body": "This post has mixed links and data",
+    "body": "This blog post has been updated and has a new related link",
   },
   "relationships": {
     "comments": {
@@ -114,6 +114,35 @@ Then accessing the relationship will trigger reloading with the `link`:
 post.get('comments').mapBy('message')
 // => ["Comment 41 was loaded via findHasMany in the post adapter", "Comment 42 was loaded via findHasMany in the post adapter"]
 ```
+
+## Reloading `data`
+
+Ok, let's say we reload the post and now there's more data. For this example, we'll go back to post #2, which has three comments in the `data` section. When reloaded two comments were added and one was deleted.
+
+#### [Updated post #2 data][post-2-updated]
+
+```json
+{
+  "id": 2,
+  "type": "post",
+  "attributes": {
+    "title": "This is blog post #2",
+    "body": "This blog post's comments relationship has a data section, and has been updated with new comments",
+  },
+  "relationships": {
+    "comments": {
+      "data": [
+        { "id": 21, "type": "comment" },
+        { "id": 23, "type": "comment" },
+        { "id": 24, "type": "comment" },
+        { "id": 25, "type": "comment" },
+      ],
+    },
+  },
+}
+```
+
+In this case, as before, the comments are loaded through the comment adapter's `findRecord` hook.
 
 
 [Part 1]: http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/
@@ -138,3 +167,4 @@ post.get('comments').mapBy('message')
 [link-changed-check]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L377
 [set-hasLoaded-false]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L399
 [cache-busting query param]: https://stackoverflow.com/questions/9692665/cache-busting-via-params
+[post-2-updated]:
