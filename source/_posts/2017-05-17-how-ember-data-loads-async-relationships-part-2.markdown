@@ -19,7 +19,7 @@ In [Part 1][], we explored how Ember Data responds to a few different common sce
 
 ## Links _and_ Data with ids
 
-In [Part 1][part-1], we talked about what happens when data is loaded via relationship `links`, when a relationships `ids` are already loaded, and what happens when neither are present.
+In [Part 1][], we talked about what happens when data is loaded via relationship `links`, when a relationships `ids` are already loaded, and what happens when neither are present.
 
 So, what happens if there are _both_ `links` and `ids`?
 
@@ -90,6 +90,8 @@ Because the [link hasn't changed][link-changed-check], it will not cause `hasLoa
 
 However, if the value of the related link changes, it will reload the relationship. For example, if reloading the post returns a link with adifferent url:
 
+#### [Updated post #4 data][post-4-updated]
+
 ```json
 {
   "id": 4,
@@ -142,7 +144,7 @@ Ok, let's say we reload the post and now there's more data. For this example, we
 }
 ```
 
-In this case, as before, the comments are loaded through the comment adapter's `findRecord` hook.
+In this case, as before, the comments are loaded through the comment adapter's `findRecord` hook, and only the comments that haven't already been loaded.
 
 
 [Part 1]: http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/
@@ -167,4 +169,5 @@ In this case, as before, the comments are loaded through the comment adapter's `
 [link-changed-check]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L377
 [set-hasLoaded-false]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L399
 [cache-busting query param]: https://stackoverflow.com/questions/9692665/cache-busting-via-params
-[post-2-updated]:
+[post-4-updated]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L80-L94
+[post-2-updated]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L99-L116
