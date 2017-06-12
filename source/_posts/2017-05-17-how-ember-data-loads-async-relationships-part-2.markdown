@@ -144,10 +144,27 @@ Ok, let's say we reload the post and now there's more data. For this example, we
 }
 ```
 
-In this case, as before, the comments are loaded through the comment adapter's `findRecord` hook, and only the comments that haven't already been loaded.
+In this case, as before, the comments are loaded through the [comment adapter's `findRecord` hook][], and only the comments that haven't already been loaded.
 
+We can verify this by adding a [logging statement to the comment adapter][]. After reloading the post, we can see the correct comments.
 
-[Part 1]: http://www.amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/
+> Comment 21 was loaded via findRecord in the comment adapter
+> Comment 23 was loaded via findRecord in the comment adapter
+> Comment 24 was loaded via findRecord in the comment adapter
+> Comment 25 was loaded via findRecord in the comment adapter
+
+And in the developer console we see that the [comment adapter's `findRecord` hook][] was only called with the new records:
+
+```
+<ember-data-relationships-examples@adapter:comment::ember361> findRecord for comment 24
+<ember-data-relationships-examples@adapter:comment::ember361> findRecord for comment 25
+```
+
+## Up Next
+
+In the next part, we'll look at how to load relationships without existing links or data.
+
+[Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [post-4]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71
 [has-many-state-get-records]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js#L213
 [`findRecord` in the comment adapter]: https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5
@@ -171,3 +188,7 @@ In this case, as before, the comments are loaded through the comment adapter's `
 [cache-busting query param]: https://stackoverflow.com/questions/9692665/cache-busting-via-params
 [post-4-updated]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L80-L94
 [post-2-updated]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L99-L116
+[comment adapter's `findRecord` hook]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/comment.js#L10
+[logging statement to the comment adapter]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/comment.js#L11
+
+

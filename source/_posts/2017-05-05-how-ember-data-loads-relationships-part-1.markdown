@@ -218,3 +218,5 @@ Let's look at another blog post example: Post #3.
 The short answer is "no", Ember Data has no facility for this. The long answer is "of course, anything is possible", but it will take some hacks.
 
 We'll take a look at how deal with this situation later in this series.
+
+Up next we'll look at what happens when relationship data changes in [Part 2](/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/).
