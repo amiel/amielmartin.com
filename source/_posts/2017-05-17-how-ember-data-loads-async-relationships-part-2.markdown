@@ -155,7 +155,7 @@ We can verify this by adding a [logging statement to the comment adapter][]. Aft
 
 And in the developer console we see that the [comment adapter's `findRecord` hook][] was only called with the new records:
 
-```
+```text
 <ember-data-relationships-examples@adapter:comment::ember361> findRecord for comment 24
 <ember-data-relationships-examples@adapter:comment::ember361> findRecord for comment 25
 ```
