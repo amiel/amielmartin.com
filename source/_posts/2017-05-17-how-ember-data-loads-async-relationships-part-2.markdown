@@ -162,7 +162,7 @@ And in the developer console we see that the [comment adapter's `findRecord` hoo
 
 ## Up Next
 
-In the next part, we'll look at how to load relationships without existing links or data.
+In Part 3, we'll look at how to load relationships that do not have existing links or data.
 
 [Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [post-4]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71
