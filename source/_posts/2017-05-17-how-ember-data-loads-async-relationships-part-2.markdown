@@ -21,11 +21,11 @@ If you haven't already read [Part 1][], I recommend doing that now, as this cont
 
 In [Part 1][], we talked about what happens when data is loaded via relationship `links`, when a relationships `ids` are already loaded, and what happens when neither are present.
 
-So, what happens if there _both_ `links` and `ids` are present?
+So, what happens if _both_ `links` and `ids` are present?
 
 #### [Post #4 data][post-4]
 
-This blog post has both related `links` and `ids` in `data`.
+Below we can see that the blog post contains both related `links` and `ids` in `data`.
 
 ```json
 {
@@ -50,7 +50,7 @@ This blog post has both related `links` and `ids` in `data`.
 
 In this case, Ember Data will prefer the `data` and call [`findRecord` in the comment adapter][]. To understand why, let's look at the codepath for loading this relationship. The [`hasMany` macro][] defines a computed property that loads an the [`has-many` relationship state][] and [calls `getRecords`][] on it. Ember Data has [some internal objects][relationship state objects] that it uses to keep track of the state of each relationship. These [relationship state objects][] keep track of the relationship settings (like [`{ async: false }`][async setting]), the [actual records][] in the relationship, the [related `link`][], and whether the relationship [has data][relationship-state-hasData] and if it [has been loaded][relationship-state-hasLoaded].
 
-Anyway, [`getRecords`][has-many-state-get-records] is where we get to the meat of the logic. [`getRecords`][has-many-state-get-records] checks if there is [a related link][getRecords-link-check], which, in the case of blog post #4, there is. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
+The meat of the logic is in [`getRecords`][has-many-state-get-records], which checks if there is [a related link][getRecords-link-check]. In the case of blog post #4, a related link does exist. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
 
 Therefore, accessing the comments relationship on post #4 will load the comment in `data`:
 
@@ -58,7 +58,7 @@ Therefore, accessing the comments relationship on post #4 will load the comment 
 post.get('comments').mapBy('message') // => ["Comment 41 was loaded via findRecord in the comment adapter"]
 ```
 
-Note, however, that if the post data gets reloaded and only has a `links` section, it will correctly [set `hasLoaded` to false][] so that the next attempt to load the relationship will use the link.
+Note that if the post data gets reloaded and only has a `links` section, it will correctly [set `hasLoaded` to false][] so that the next attempt to load the relationship will use the link.
 
 ## Reloading `links`
 
