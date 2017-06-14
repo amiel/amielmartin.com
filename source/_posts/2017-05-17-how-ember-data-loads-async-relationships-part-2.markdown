@@ -17,7 +17,7 @@ If you haven't already read [Part 1][], I recommend doing that now, as this cont
 
 <!--More-->
 
-## Links _and_ Data with ids
+## Links _and_ Data with IDs
 
 In [Part 1][], we talked about what happens when data is loaded via relationship `links`, when a relationships `ids` are already loaded, and what happens when neither are present.
 
