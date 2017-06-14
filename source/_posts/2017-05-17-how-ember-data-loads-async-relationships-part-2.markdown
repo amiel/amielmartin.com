@@ -13,19 +13,19 @@ categories:
 
 If you haven't already read [Part 1][], I recommend doing that now, as this continues right where we left off.
 
-In [Part 1][], we explored how Ember Data responds to a few different common scenarios. In Part 2, we'll look at some less-straight-forward examples. In a later posts we'll look at how to get around some limitations of Ember Data.
+[Part 1][] explored how Ember Data responds to a few common scenarios. In Part 2, we will look at some less straightforward examples. Then, in a later post, we will examine limitations of Ember Data.
 
 <!--More-->
 
-## Links _and_ Data with ids
+## Links _and_ Data with IDs
 
 In [Part 1][], we talked about what happens when data is loaded via relationship `links`, when a relationships `ids` are already loaded, and what happens when neither are present.
 
-So, what happens if there are _both_ `links` and `ids`?
+So, what happens if _both_ `links` and `ids` are present?
 
 #### [Post #4 data][post-4]
 
-This blog post has both related `links` and `ids` in `data`.
+Below we can see that the blog post contains both related `links` and `ids` in `data`.
 
 ```json
 {
@@ -50,7 +50,7 @@ This blog post has both related `links` and `ids` in `data`.
 
 In this case, Ember Data will prefer the `data` and call [`findRecord` in the comment adapter][]. To understand why, let's look at the codepath for loading this relationship. The [`hasMany` macro][] defines a computed property that loads an the [`has-many` relationship state][] and [calls `getRecords`][] on it. Ember Data has [some internal objects][relationship state objects] that it uses to keep track of the state of each relationship. These [relationship state objects][] keep track of the relationship settings (like [`{ async: false }`][async setting]), the [actual records][] in the relationship, the [related `link`][], and whether the relationship [has data][relationship-state-hasData] and if it [has been loaded][relationship-state-hasLoaded].
 
-Anyway, [`getRecords`][has-many-state-get-records] is where we get to the meat of the logic. [`getRecords`][has-many-state-get-records] checks if there is [a related link][getRecords-link-check], which, in the case of blog post #4, there is. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
+The meat of the logic is in [`getRecords`][has-many-state-get-records], which checks if there is [a related link][getRecords-link-check]. In the case of blog post #4, a related link does exist. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
 
 Therefore, accessing the comments relationship on post #4 will load the comment in `data`:
 
@@ -58,11 +58,11 @@ Therefore, accessing the comments relationship on post #4 will load the comment 
 post.get('comments').mapBy('message') // => ["Comment 41 was loaded via findRecord in the comment adapter"]
 ```
 
-Note, however, that if the post data gets reloaded and only has a `links` section, it will correctly [set `hasLoaded` to false][] so that the next attempt to load the relationship will use the link.
+Note that if the post data gets reloaded and only has a `links` section, it will correctly [set `hasLoaded` to false][] so that the next attempt to load the relationship will use the link.
 
 ## Reloading `links`
 
-Speaking of subsequent loads of relationship data, let's look at how Ember Data deals with reloading relationships. There are a lot of possible scenarios, so let's arbitrarily start where we just were: an updated link.
+Speaking of subsequent loads of relationship data, let's look at how Ember Data deals with reloading relationships. There are many possible scenarios, so let's arbitrarily start where we just were: an updated link.
 
 Let's assume we have the previous post ([post #4][post-4]) loaded, and when we reload the blog post, we just get a `link`, like this:
 
@@ -88,7 +88,7 @@ What happens with this example when we try to load the comments relationship?
 
 Because the [link hasn't changed][link-changed-check], it will not cause `hasLoaded` to be [set to false][set-hasLoaded-false]. So accessing the comments relationship after reloading the blog post will continue to use the already loaded data.
 
-However, if the value of the related link changes, it will reload the relationship. For example, if reloading the post returns a link with adifferent url:
+However, if the value of the related link changes, it will reload the relationship. For example, if reloading the post returns a link with a different url:
 
 #### [Updated post #4 data][post-4-updated]
 
@@ -119,7 +119,7 @@ post.get('comments').mapBy('message')
 
 ## Reloading `data`
 
-Ok, let's say we reload the post and now there's more data. For this example, we'll go back to post #2, which has three comments in the `data` section. When reloaded two comments were added and one was deleted.
+Ok, let's say we reload the post and now there's more data. For this example, we'll go back to [post #2][post-2], which has three comments in the `data` section. When reloaded, two comments were added and one was deleted.
 
 #### [Updated post #2 data][post-2-updated]
 
@@ -144,7 +144,7 @@ Ok, let's say we reload the post and now there's more data. For this example, we
 }
 ```
 
-In this case, as before, the comments are loaded through the [comment adapter's `findRecord` hook][], and only the comments that haven't already been loaded.
+Just like before, the comments are loaded through the [comment adapter's `findRecord` hook][], but this time the only comments loaded are those that _haven't already been loaded_.
 
 We can verify this by adding a [logging statement to the comment adapter][]. After reloading the post, we can see the correct comments.
 
@@ -162,7 +162,7 @@ And in the developer console we see that the [comment adapter's `findRecord` hoo
 
 ## Up Next
 
-In the next part, we'll look at how to load relationships without existing links or data.
+In Part 3, we'll look at how to load relationships that do not have existing links or data.
 
 [Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [post-4]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71
