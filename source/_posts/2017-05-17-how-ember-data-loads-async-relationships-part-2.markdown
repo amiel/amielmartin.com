@@ -119,7 +119,7 @@ post.get('comments').mapBy('message')
 
 ## Reloading `data`
 
-Ok, let's say we reload the post and now there's more data. For this example, we'll go back to post #2, which has three comments in the `data` section. When reloaded two comments were added and one was deleted.
+Ok, let's say we reload the post and now there's more data. For this example, we'll go back to [post #2][post-2], which has three comments in the `data` section. When reloaded, two comments were added and one was deleted.
 
 #### [Updated post #2 data][post-2-updated]
 
@@ -144,7 +144,7 @@ Ok, let's say we reload the post and now there's more data. For this example, we
 }
 ```
 
-In this case, as before, the comments are loaded through the [comment adapter's `findRecord` hook][], and only the comments that haven't already been loaded.
+Just like before, the comments are loaded through the [comment adapter's `findRecord` hook][], but this time the only comments loaded are those that _haven't already been loaded_.
 
 We can verify this by adding a [logging statement to the comment adapter][]. After reloading the post, we can see the correct comments.
 
