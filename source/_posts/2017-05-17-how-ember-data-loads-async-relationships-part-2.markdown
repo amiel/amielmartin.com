@@ -13,7 +13,7 @@ categories:
 
 If you haven't already read [Part 1][], I recommend doing that now, as this continues right where we left off.
 
-In [Part 1][], we explored how Ember Data responds to a few different common scenarios. Here, in Part 2, we'll look at some less straightforward examples. In a later post, we will look at how to get around some limitations of Ember Data.
+[Part 1][] explored how Ember Data responds to a few common scenarios. In Part 2, we will look at some less straightforward examples. Then, in a later post, we will examine limitations of Ember Data.
 
 <!--More-->
 
