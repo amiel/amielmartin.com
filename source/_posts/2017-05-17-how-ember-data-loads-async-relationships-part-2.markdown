@@ -62,7 +62,7 @@ Note that if the post data gets reloaded and only has a `links` section, it will
 
 ## Reloading `links`
 
-Speaking of subsequent loads of relationship data, let's look at how Ember Data deals with reloading relationships. There are a lot of possible scenarios, so let's arbitrarily start where we just were: an updated link.
+Speaking of subsequent loads of relationship data, let's look at how Ember Data deals with reloading relationships. There are many possible scenarios, so let's arbitrarily start where we just were: an updated link.
 
 Let's assume we have the previous post ([post #4][post-4]) loaded, and when we reload the blog post, we just get a `link`, like this:
 
@@ -88,7 +88,7 @@ What happens with this example when we try to load the comments relationship?
 
 Because the [link hasn't changed][link-changed-check], it will not cause `hasLoaded` to be [set to false][set-hasLoaded-false]. So accessing the comments relationship after reloading the blog post will continue to use the already loaded data.
 
-However, if the value of the related link changes, it will reload the relationship. For example, if reloading the post returns a link with adifferent url:
+However, if the value of the related link changes, it will reload the relationship. For example, if reloading the post returns a link with a different url:
 
 #### [Updated post #4 data][post-4-updated]
 
