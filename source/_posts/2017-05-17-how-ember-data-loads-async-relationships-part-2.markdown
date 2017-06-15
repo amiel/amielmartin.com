@@ -166,6 +166,7 @@ In Part 3, we'll look at how to load relationships that do not have existing lin
 
 [Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [post-4]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71
+[post-2]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L27-L43
 [has-many-state-get-records]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js#L213
 [`findRecord` in the comment adapter]: https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5
 [`hasMany` macro]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/has-many.js#L146-L148
