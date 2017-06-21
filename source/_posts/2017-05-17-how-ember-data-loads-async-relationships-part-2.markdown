@@ -48,11 +48,9 @@ Below we can see that the blog post contains both related `links` and `ids` in `
 }
 ```
 
-In this case, Ember Data will prefer the `data` and call [`findRecord` in the comment adapter][]. To understand why, let's look at the codepath for loading this relationship. The [`hasMany` macro][] defines a computed property that loads an the [`has-many` relationship state][] and [calls `getRecords`][] on it. Ember Data has [some internal objects][relationship state objects] that it uses to keep track of the state of each relationship. These [relationship state objects][] keep track of the relationship settings (like [`{ async: false }`][async setting]), the [actual records][] in the relationship, the [related `link`][], and whether the relationship [has data][relationship-state-hasData] and if it [has been loaded][relationship-state-hasLoaded].
+In this case, Ember Data will prefer the `data` and call [`findRecord` in the comment adapter][]. This way, any records in the relationship that have already been loaded won't need to be loaded again. We will look at how reloading relationships works in the next couple of sections.
 
-The meat of the logic is in [`getRecords`][has-many-state-get-records], which checks if there is [a related link][getRecords-link-check]. In the case of blog post #4, a related link does exist. Then, it checks if the [relationship `hasLoaded`][hasLoaded-check]. What does that mean? I don't know, but we can find [where it is set in `push`][setHasLoaded-in-push]. It looks like, since there is a `data` section in our relationship, [`findRecords` is called][call-to-findRecords] instead of [`findLink`][call-to-findLink].
-
-Therefore, accessing the comments relationship on post #4 will load the comment in `data`:
+Anyway, accessing the comments relationship on post #4 will load the comment in `data` and not use the related link:
 
 ```javascript
 post.get('comments').mapBy('message') // => ["Comment 41 was loaded via findRecord in the comment adapter"]
