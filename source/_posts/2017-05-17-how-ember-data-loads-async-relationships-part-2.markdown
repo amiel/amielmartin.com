@@ -158,6 +158,44 @@ And in the developer console we see that the [comment adapter's `findRecord` hoo
 <ember-data-relationships-examples@adapter:comment::ember361> findRecord for comment 25
 ```
 
+## Summary
+
+Depending on the contents of the `relationships` section, ember-data will call different hooks in your adapters to load relationship data. The following table summarizes which hooks will be called in each situation.
+
+<table>
+  <thead>
+    <tr>
+      <th colspan="2" rowspan="2" class="empty-corner"></th>
+      <th colspan="2">
+        <code>data.@each.id</code>
+      </th>
+    </tr>
+    <tr>
+      <th>not present</th>
+      <th>present</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="2">
+        <code>link.related</code>
+      </th>
+
+      <th>not present</th>
+
+      <td>nothing</td>
+      <td><code>adapter:comment findRecord</code></td>
+    </tr>
+
+    <tr>
+      <th>present</th>
+
+      <td><code>adapter:post findHasMany</code></td>
+      <td><code>adapter:comment findRecord</code></td>
+    </tr>
+  </tbody>
+</table>
+
 ## Up Next
 
 In Part 3, we'll look at how to load relationships that do not have existing links or data.
