@@ -9,7 +9,7 @@ categories:
   - ember-data
 ---
 
-<iframe width="178" height="24" style="border:0px" src="https://mixonic.github.io/ember-community-versions/2017/05/17/how-ember-data-loads-async-relationships-part-2.html"></iframe>
+<span class="embadge" data-start="2.12.0"><span>
 
 If you haven't already read [Part 1][], I recommend doing that now, as this continues right where we left off.
 
