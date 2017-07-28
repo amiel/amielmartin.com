@@ -8,6 +8,7 @@ published: true
 categories:
   - ember.js
   - ember-data
+  - series-ember-data-async-relationships
 ---
 
 <span class="embadge" data-start="2.12.0"><span>
