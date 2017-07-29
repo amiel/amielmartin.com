@@ -199,7 +199,8 @@ Depending on the contents of the `relationships` section, ember-data will call d
 
 ## Up Next
 
-In Part 3, we'll look at how to load relationships that do not have existing links or data.
+In [Part 3][], we'll look at how to load relationships that do not have existing links or data.
+
 
 [Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [post-4]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71
@@ -228,5 +229,4 @@ In Part 3, we'll look at how to load relationships that do not have existing lin
 [post-2-updated]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L99-L116
 [comment adapter's `findRecord` hook]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/comment.js#L10
 [logging statement to the comment adapter]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/comment.js#L11
-
-
+[Part 3]: /blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/
