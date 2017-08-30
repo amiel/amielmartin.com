@@ -14,7 +14,7 @@ categories:
 
 If you haven't already read [Part 1][] and [Part 2][], I recommend doing that now, as this continues right where we left off.
 
-[Part 1][] explored how Ember Data responds to a few common scenarios. [Part 2][] discussed some less straightforward examples. [Part 3] will examine how to load relationships when the API does not provide data or links.
+[Part 1][] explored how Ember Data responds to a few common scenarios. [Part 2][] discussed some less straightforward examples. Part 3 will examine how to load relationships when the API does not provide data or links.
 
 [Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [Part 2]: /blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/
@@ -59,7 +59,9 @@ Assuming we can't change our API, and without a `relationships` section in the p
 
 Another benefit to putting this logic in the serializer is that we can call `this._super` first to make sure that we are already working with the JSON:API structure.
 
-#### [`app/serializers/post.js`][]
+### Hard-code `links` in the Serializer
+
+#### `app/serializers/post.js`
 
 ```js
 normalize(typeClass, hash) {
@@ -77,9 +79,62 @@ normalize(typeClass, hash) {
 
 This same idea could be done with `data`, although I'm struggling to think of a use-case for this.
 
-One bummer about putting this logic in the post serializer is that usually url configuration happens in the adapter.
+### Move Url Building Logic to the Adapter
 
+One bummer about putting this logic in the post serializer is that usually url configuration happens in the adapter. There is likely to be duplication of concerns because there is logic to build urls in the adapter _and_ the serializer.
+
+To get around this, we can inject `links` in the serializer with a [sentinal value][] and build the url in the adapter. That might look something like this:
+
+#### [`app/serializers/post.js`][]
+
+```js
+normalize(typeClass, hash) {
+  let jsonapi = this._super(...arguments);
+
+  if (!jsonapi.data.relationships.comments) {
+    jsonapi.data.relationships.comments = {
+      links: { related: 'urlTemplate:comments' },
+    };
+  }
+
+  return jsonapi;
+},
+```
+
+#### [`app/adapters/post.js`][]
+
+```js
+findHasMany(store, snapshot, link/*, relationship */) {
+  let url;
+
+  if (link === 'urlTemplate:comments') {
+    url = `/posts/${snapshot.id}/comments`;
+  } else {
+    url = link;
+  }
+
+  return this._super(...arguments);
+}
+```
+
+This example is hard-coded for one case and it wouldn't be too hard to generalize it to work for any relationship. In fact, this is exactly what [ember-data-url-templates does][].
+
+### Limitations
+
+There are some limitations to this approach. In particular, loading relationships will only work for models that have been run through the serializer. This will not work, for example, with a branch new model created by `store.createRecord`, until that record is saved (and the response from the server passed through `normalize`).
+
+[sentinal value]: https://en.wikipedia.org/wiki/Sentinel_value
 [`app/serializers/post.js`]: https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/serializers/post.js#L4-L14
+[`app/adapters/post.js`]: https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/adapters/post.js#L131-L136
+[ember-data-url-templates does]: https://github.com/amiel/ember-data-url-templates/pull/36
 
+## 3. Change Ember Data
 
+Let's review. We are looking at various strategies for loading relationships with Ember Data when the API does not provide `links` or `data` in `relationships`. The first suggestion is to change the API if possible. If it is not possible to change the API, `links` can be injected in the resulting JSON:API structure to mimic an API that does provide these things.
+
+Wouldn't it be nice, though, if Ember Data supported this use-case natively?
+
+The last approach requires Ember Data to change so that supporting this case is a first-class citizen (this has been proposed before). I'm not sure exactly what that would look like. One reason I wrote this blog series is to move the discussion forward. So, what do you think?
+
+[been proposed before]: https://elements.heroku.com/addons/scout
 
