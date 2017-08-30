@@ -16,6 +16,8 @@ If you haven't already read [Part 1][], I recommend doing that now, as this cont
 
 [Part 1][] explored how Ember Data responds to a few common scenarios. In Part 2, we will look at some less straightforward examples. Then, in a later post, we will examine limitations of Ember Data.
 
+[Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
+
 <!--More-->
 
 ## Links _and_ Data with IDs
@@ -202,7 +204,6 @@ Depending on the contents of the `relationships` section, ember-data will call d
 In [Part 3][], we'll look at how to load relationships that do not have existing links or data.
 
 
-[Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [post-4]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71
 [post-2]: https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L27-L43
 [has-many-state-get-records]: https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/has-many.js#L213
