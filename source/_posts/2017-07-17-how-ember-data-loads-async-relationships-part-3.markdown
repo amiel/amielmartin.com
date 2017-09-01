@@ -12,7 +12,7 @@ categories:
 
 <span class="embadge" data-start="2.12.0"><span>
 
-If you haven't already read [Part 1][] and [Part 2][], I recommend doing that now, as this continues right where we left off.
+Greetings! Please read [Part 1][] and [Part 2][] before continuing on.
 
 [Part 1][] explored how Ember Data responds to a few common scenarios. [Part 2][] discussed some less straightforward examples. Part 3 will examine how to load relationships when the API does not provide data or links.
 
@@ -21,9 +21,9 @@ If you haven't already read [Part 1][] and [Part 2][], I recommend doing that no
 
 <!--More-->
 
-Let's revisit a scenario from [Part 1][]. [Post #3][] doesn't have a `relationships` section and therefore does not have any `data` or `links`.
+Let's revisit a scenario from [Part 1][]. [Blog Post #3][] doesn't have a `relationships` section and therefore does not have any `data` or `links`.
 
-[Post #3]: https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/adapters/post.js#L45-L52
+[Blog Post #3]: https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/adapters/post.js#L47-L54
 
 ```json
 {
@@ -47,9 +47,9 @@ In this post we will explore a few different ways to deal with this situation.
 
 ## 1. Update your API to include `data` or `links`
 
-Ok, this is kind of a cop-out. Really though, if you have control over the API, it might as well follow the [JSON:API spec for fetching relationships][].
+Really though, if you have control over the API, it might as well follow the [JSON:API spec for fetching relationships][].
 
-However, if you don't have the ability to change the API, or the way your data is structured just needs to load relationships without knowing a url ahead of time or based on user data, read on.
+What if you don't have the ability to change the API?  What if your data is structured such that you need to load relationships a) without knowing a url ahead of time, or b) based on user data?  Let's read on to find a solution!
 
 [JSON:API spec for fetching relationships]: http://jsonapi.org/format/#fetching-relationships
 
