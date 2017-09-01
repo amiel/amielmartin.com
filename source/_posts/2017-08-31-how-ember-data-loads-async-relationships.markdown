@@ -8,13 +8,13 @@ categories:
   - ember-data
 ---
 
-<span class="embadge" data-start="2.12.0"><span>
+This post simply links to each part in the series.
 
-## Table Of Contents
+<!-- more -->
 
-### [Part 1][]
-### [Part 2][]
-### [Part 3][]
+### [Part 1][] - The Basics
+### [Part 2][] - Edge Cases
+### [Part 3][] - The Hacks
 
 [Part 1]: /blog/2017/05/05/how-ember-data-loads-relationships-part-1/
 [Part 2]: /blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/
