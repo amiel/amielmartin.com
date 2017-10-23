@@ -133,7 +133,7 @@ Let's review. We are looking at various strategies for loading relationships wit
 
 Wouldn't it be nice, though, if Ember Data supported this use-case natively?
 
-The last approach requires Ember Data to change so that supporting this case is a first-class citizen (this has been proposed before). I'm not sure exactly what that would look like. One reason I wrote this blog series is to move the discussion forward. So, what do you think?
+The last approach requires Ember Data to change so that supporting this case is a first-class citizen (this has [been proposed before]). I'm not sure exactly what that would look like. One reason I wrote this blog series is to move the discussion forward. So, what do you think?
 
-[been proposed before]: https://elements.heroku.com/addons/scout
+[been proposed before]: https://github.com/emberjs/data/issues/2162
 
