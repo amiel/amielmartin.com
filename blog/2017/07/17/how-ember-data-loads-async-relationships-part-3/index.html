@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>How Ember Data Loads Async Relationships: Part 3 - Amiel Martin</title>
+  <meta name="author" content="Amiel Martin">
+
+  
+  <meta name="description" content="How Ember Data Loads Async Relationships: Part 3 July 17, 2017 in ember-data, ember.js Greetings! Please read Part 1 and Part 2 before continuing on &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="google-site-verification" content="UGd4WRAL2iSgwFqmybaK3Ck9a-1Jd-dH0PKG_PpGXts" />
+
+  
+  <link rel="canonical" href="http://amielmartin.com/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Amiel Martin" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-1309955-6']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+  <body>
+    <a href="/" class="home-icon">
+      <img src="/images/home.png"/>
+    </a>
+
+    <article role="article" class="full-single-article">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        <h1>How Ember Data Loads Async Relationships: Part 3</h1>
+        <div class="meta">
+          
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2017-07-17T08:53:32-08:00" pubdate data-updated="true">July 17, 2017</time>
+          
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ember-data/'>ember-data</a>, <a class='category' href='/blog/categories/ember-dot-js/'>ember.js</a>
+  
+</span>
+
+
+        </div>
+        <p><span class="embadge" data-start="2.12.0"><span></p>
+
+<p>Greetings! Please read <a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> and <a href="/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a> before continuing on.</p>
+
+<p><a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> explored how Ember Data responds to a few common scenarios. <a href="/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a> discussed some less straightforward examples. Part 3 will examine how to load relationships when the API does not provide data or links.</p>
+
+<!--More-->
+
+
+<p>Let&rsquo;s revisit a scenario from <a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a>. <a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/adapters/post.js#L47-L54">Blog Post #3</a> doesn&rsquo;t have a <code>relationships</code> section and therefore does not have any <code>data</code> or <code>links</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #3&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This post&#39;s has no comments&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When attempting to load a relationship with this post, Ember Data will not call any adapter hooks.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">post</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="c1">// =&gt; []</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this post we will explore a few different ways to deal with this situation.</p>
+
+<h2>1. Update your API to include <code>data</code> or <code>links</code></h2>
+
+<p>Really though, if you have control over the API, it might as well follow the <a href="http://jsonapi.org/format/#fetching-relationships">JSON:API spec for fetching relationships</a>.</p>
+
+<p>What if you don&rsquo;t have the ability to change the API?  What if your data is structured such that you need to load relationships a) without knowing a url ahead of time, or b) based on user data?  Let&rsquo;s read on to find a solution!</p>
+
+<h2>2. Manipulate the relationships <code>links</code> or <code>data</code></h2>
+
+<p>Assuming we can&rsquo;t change our API, and without a <code>relationships</code> section in the payload Ember Data doesn&rsquo;t call any of our adapter hooks, we&rsquo;ll have to make a <code>relationships</code> section ourselves. This could be done in the adapter or the serializer. Let&rsquo;s do it in the serializer since the adapter is designed to load data and the serializer is meant to manipulate the loaded data.</p>
+
+<p>Another benefit to putting this logic in the serializer is that we can call <code>this._super</code> first to make sure that we are already working with the JSON:API structure.</p>
+
+<h3>Hard-code <code>links</code> in the Serializer</h3>
+
+<h4><code>app/serializers/post.js</code></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">normalize</span><span class="p">(</span><span class="nx">typeClass</span><span class="p">,</span> <span class="nx">hash</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">let</span> <span class="nx">jsonapi</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">links</span><span class="o">:</span> <span class="p">{</span> <span class="nx">related</span><span class="o">:</span> <span class="err">`</span><span class="o">/</span><span class="nx">posts</span><span class="o">/</span><span class="nx">$</span><span class="p">{</span><span class="nx">hash</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="o">/</span><span class="nx">comments</span><span class="err">`</span> <span class="p">},</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">jsonapi</span><span class="p">;</span>
+</span><span class='line'><span class="p">},</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This same idea could be done with <code>data</code>, although I&rsquo;m struggling to think of a use-case for this.</p>
+
+<h3>Move Url Building Logic to the Adapter</h3>
+
+<p>One bummer about putting this logic in the post serializer is that usually url configuration happens in the adapter. There is likely to be duplication of concerns because there is logic to build urls in the adapter <em>and</em> the serializer.</p>
+
+<p>To get around this, we can inject <code>links</code> in the serializer with a <a href="https://en.wikipedia.org/wiki/Sentinel_value">sentinal value</a> and build the url in the adapter. That might look something like this:</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/serializers/post.js#L4-L14"><code>app/serializers/post.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">normalize</span><span class="p">(</span><span class="nx">typeClass</span><span class="p">,</span> <span class="nx">hash</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">let</span> <span class="nx">jsonapi</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">links</span><span class="o">:</span> <span class="p">{</span> <span class="nx">related</span><span class="o">:</span> <span class="s1">&#39;urlTemplate:comments&#39;</span> <span class="p">},</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">jsonapi</span><span class="p">;</span>
+</span><span class='line'><span class="p">},</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/adapters/post.js#L131-L136"><code>app/adapters/post.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">findHasMany</span><span class="p">(</span><span class="nx">store</span><span class="p">,</span> <span class="nx">snapshot</span><span class="p">,</span> <span class="nx">link</span><span class="cm">/*, relationship */</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">let</span> <span class="nx">url</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">link</span> <span class="o">===</span> <span class="s1">&#39;urlTemplate:comments&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">url</span> <span class="o">=</span> <span class="err">`</span><span class="o">/</span><span class="nx">posts</span><span class="o">/</span><span class="nx">$</span><span class="p">{</span><span class="nx">snapshot</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="o">/</span><span class="nx">comments</span><span class="err">`</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">url</span> <span class="o">=</span> <span class="nx">link</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This example is hard-coded for one case and it wouldn&rsquo;t be too hard to generalize it to work for any relationship. In fact, this is exactly what <a href="https://github.com/amiel/ember-data-url-templates/pull/36">ember-data-url-templates does</a>.</p>
+
+<h3>Limitations</h3>
+
+<p>There are some limitations to this approach. In particular, loading relationships will only work for models that have been run through the serializer. This will not work, for example, with a branch new model created by <code>store.createRecord</code>, until that record is saved (and the response from the server passed through <code>normalize</code>).</p>
+
+<h2>3. Change Ember Data</h2>
+
+<p>Let&rsquo;s review. We are looking at various strategies for loading relationships with Ember Data when the API does not provide <code>links</code> or <code>data</code> in <code>relationships</code>. The first suggestion is to change the API if possible. If it is not possible to change the API, <code>links</code> can be injected in the resulting JSON:API structure to mimic an API that does provide these things.</p>
+
+<p>Wouldn&rsquo;t it be nice, though, if Ember Data supported this use-case natively?</p>
+
+<p>The last approach requires Ember Data to change so that supporting this case is a first-class citizen (this has <a href="https://github.com/emberjs/data/issues/2162">been proposed before</a>). I&rsquo;m not sure exactly what that would look like. One reason I wrote this blog series is to move the discussion forward. So, what do you think?</p>
+
+
+        <hr class="divider-short"/>
+
+        
+        <section>
+          <h1>Comments</h1>
+          <div id="disqus_thread" aria-live="polite"></div>
+        </section>
+        
+      </div>
+    </div>
+  </div>
+</article>
+
+<hr class="divider-short"/>
+
+<div class="archive-link">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        
+          <a class="pull-left" href="/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/" title="Previous Post: How Ember Data Loads Async Relationships: Part 2">&laquo; Previous: How Ember Data Loads Async Relationships: Part 2</a>
+        
+
+        
+          <a class="pull-right" href="/blog/2017/08/31/how-ember-data-loads-async-relationships/" title="Next Post: How Ember Data Loads Async Relationships">Next: How Ember Data Loads Async Relationships &raquo;</a>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="//embadge.io/v1/badge.js" type="text/javascript"></script>
+
+
+
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'amielmartin';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amielmartin.com/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/';
+        var disqus_url = 'http://amielmartin.com/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<footer id="footer" class="her-row">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-1">
+  <a href="/"><h4>Home</h4></a>
+</div>
+
+<div class="col-md-2">
+  <div class="social-icon-list">
+    
+    <a href="https://twitter.com/amielmartin"><img src="/images/glyphicons_social_31_twitter.png"/></a>
+    
+
+    
+    <a href="https://github.com/amiel"><img src="/images/glyphicons_social_21_github.png"/></a>
+    
+
+    
+    <a href="https://linkedin.com/in/amielmartin"><img src="/images/glyphicons_social_17_linked_in.png"/></a>
+    
+
+    
+    <a href="mailto:amiel@amielmartin.com"><img src="/images/glyphicons_social_39_e-mail.png"/></a>
+    
+  </div>
+</div>
+
+    </div>
+  </div>
+</footer>
+
+
+  </body>
+</html>

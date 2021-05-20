@@ -1,0 +1,1209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Amiel Martin]]></title>
+  <link href="http://amielmartin.com/atom.xml" rel="self"/>
+  <link href="http://amielmartin.com/"/>
+  <updated>2021-05-19T21:44:26-07:00</updated>
+  <id>http://amielmartin.com/</id>
+  <author>
+    <name><![CDATA[Amiel Martin]]></name>
+    <email><![CDATA[amiel@amielmartin.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[How Ember Data Loads Async Relationships]]></title>
+    <link href="http://amielmartin.com/blog/2017/08/31/how-ember-data-loads-async-relationships/"/>
+    <updated>2017-08-31T22:07:32-07:00</updated>
+    <id>http://amielmartin.com/blog/2017/08/31/how-ember-data-loads-async-relationships</id>
+    <content type="html"><![CDATA[<p>This post simply links to each part in the series.</p>
+
+<!-- more -->
+
+
+<h3><a href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> - The Basics</h3>
+
+<h3><a href="http://amielmartin.com/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a> - Edge Cases</h3>
+
+<h3><a href="http://amielmartin.com/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/">Part 3</a> - The Hacks</h3>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How Ember Data Loads Async Relationships: Part 3]]></title>
+    <link href="http://amielmartin.com/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/"/>
+    <updated>2017-07-17T08:53:32-08:00</updated>
+    <id>http://amielmartin.com/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3</id>
+    <content type="html"><![CDATA[<p><span class="embadge" data-start="2.12.0"><span></p>
+
+<p>Greetings! Please read <a href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> and <a href="http://amielmartin.com/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a> before continuing on.</p>
+
+<p><a href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> explored how Ember Data responds to a few common scenarios. <a href="http://amielmartin.com/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a> discussed some less straightforward examples. Part 3 will examine how to load relationships when the API does not provide data or links.</p>
+
+<!--More-->
+
+
+<p>Let&rsquo;s revisit a scenario from <a href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a>. <a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/adapters/post.js#L47-L54">Blog Post #3</a> doesn&rsquo;t have a <code>relationships</code> section and therefore does not have any <code>data</code> or <code>links</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #3&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This post&#39;s has no comments&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When attempting to load a relationship with this post, Ember Data will not call any adapter hooks.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">post</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="c1">// =&gt; []</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this post we will explore a few different ways to deal with this situation.</p>
+
+<h2>1. Update your API to include <code>data</code> or <code>links</code></h2>
+
+<p>Really though, if you have control over the API, it might as well follow the <a href="http://jsonapi.org/format/#fetching-relationships">JSON:API spec for fetching relationships</a>.</p>
+
+<p>What if you don&rsquo;t have the ability to change the API?  What if your data is structured such that you need to load relationships a) without knowing a url ahead of time, or b) based on user data?  Let&rsquo;s read on to find a solution!</p>
+
+<h2>2. Manipulate the relationships <code>links</code> or <code>data</code></h2>
+
+<p>Assuming we can&rsquo;t change our API, and without a <code>relationships</code> section in the payload Ember Data doesn&rsquo;t call any of our adapter hooks, we&rsquo;ll have to make a <code>relationships</code> section ourselves. This could be done in the adapter or the serializer. Let&rsquo;s do it in the serializer since the adapter is designed to load data and the serializer is meant to manipulate the loaded data.</p>
+
+<p>Another benefit to putting this logic in the serializer is that we can call <code>this._super</code> first to make sure that we are already working with the JSON:API structure.</p>
+
+<h3>Hard-code <code>links</code> in the Serializer</h3>
+
+<h4><code>app/serializers/post.js</code></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">normalize</span><span class="p">(</span><span class="nx">typeClass</span><span class="p">,</span> <span class="nx">hash</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">let</span> <span class="nx">jsonapi</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">links</span><span class="o">:</span> <span class="p">{</span> <span class="nx">related</span><span class="o">:</span> <span class="err">`</span><span class="o">/</span><span class="nx">posts</span><span class="o">/</span><span class="nx">$</span><span class="p">{</span><span class="nx">hash</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="o">/</span><span class="nx">comments</span><span class="err">`</span> <span class="p">},</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">jsonapi</span><span class="p">;</span>
+</span><span class='line'><span class="p">},</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This same idea could be done with <code>data</code>, although I&rsquo;m struggling to think of a use-case for this.</p>
+
+<h3>Move Url Building Logic to the Adapter</h3>
+
+<p>One bummer about putting this logic in the post serializer is that usually url configuration happens in the adapter. There is likely to be duplication of concerns because there is logic to build urls in the adapter <em>and</em> the serializer.</p>
+
+<p>To get around this, we can inject <code>links</code> in the serializer with a <a href="https://en.wikipedia.org/wiki/Sentinel_value">sentinal value</a> and build the url in the adapter. That might look something like this:</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/serializers/post.js#L4-L14"><code>app/serializers/post.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">normalize</span><span class="p">(</span><span class="nx">typeClass</span><span class="p">,</span> <span class="nx">hash</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">let</span> <span class="nx">jsonapi</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">jsonapi</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">relationships</span><span class="p">.</span><span class="nx">comments</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">links</span><span class="o">:</span> <span class="p">{</span> <span class="nx">related</span><span class="o">:</span> <span class="s1">&#39;urlTemplate:comments&#39;</span> <span class="p">},</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">jsonapi</span><span class="p">;</span>
+</span><span class='line'><span class="p">},</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-3/app/adapters/post.js#L131-L136"><code>app/adapters/post.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">findHasMany</span><span class="p">(</span><span class="nx">store</span><span class="p">,</span> <span class="nx">snapshot</span><span class="p">,</span> <span class="nx">link</span><span class="cm">/*, relationship */</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">let</span> <span class="nx">url</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">link</span> <span class="o">===</span> <span class="s1">&#39;urlTemplate:comments&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">url</span> <span class="o">=</span> <span class="err">`</span><span class="o">/</span><span class="nx">posts</span><span class="o">/</span><span class="nx">$</span><span class="p">{</span><span class="nx">snapshot</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="o">/</span><span class="nx">comments</span><span class="err">`</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">url</span> <span class="o">=</span> <span class="nx">link</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This example is hard-coded for one case and it wouldn&rsquo;t be too hard to generalize it to work for any relationship. In fact, this is exactly what <a href="https://github.com/amiel/ember-data-url-templates/pull/36">ember-data-url-templates does</a>.</p>
+
+<h3>Limitations</h3>
+
+<p>There are some limitations to this approach. In particular, loading relationships will only work for models that have been run through the serializer. This will not work, for example, with a branch new model created by <code>store.createRecord</code>, until that record is saved (and the response from the server passed through <code>normalize</code>).</p>
+
+<h2>3. Change Ember Data</h2>
+
+<p>Let&rsquo;s review. We are looking at various strategies for loading relationships with Ember Data when the API does not provide <code>links</code> or <code>data</code> in <code>relationships</code>. The first suggestion is to change the API if possible. If it is not possible to change the API, <code>links</code> can be injected in the resulting JSON:API structure to mimic an API that does provide these things.</p>
+
+<p>Wouldn&rsquo;t it be nice, though, if Ember Data supported this use-case natively?</p>
+
+<p>The last approach requires Ember Data to change so that supporting this case is a first-class citizen (this has <a href="https://github.com/emberjs/data/issues/2162">been proposed before</a>). I&rsquo;m not sure exactly what that would look like. One reason I wrote this blog series is to move the discussion forward. So, what do you think?</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How Ember Data Loads Async Relationships: Part 2]]></title>
+    <link href="http://amielmartin.com/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/"/>
+    <updated>2017-05-17T16:14:44-08:00</updated>
+    <id>http://amielmartin.com/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2</id>
+    <content type="html"><![CDATA[<p><span class="embadge" data-start="2.12.0"><span></p>
+
+<p>If you haven&rsquo;t already read <a href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a>, I recommend doing that now, as this continues right where we left off.</p>
+
+<p><a href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> explored how Ember Data responds to a few common scenarios. In Part 2, we will look at some less straightforward examples. Then, in a later post, we will examine limitations of Ember Data.</p>
+
+<!--More-->
+
+
+<h2>Links <em>and</em> Data with IDs</h2>
+
+<p>In <a href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a>, we talked about what happens when data is loaded via relationship <code>links</code>, when a relationships <code>ids</code> are already loaded, and what happens when neither are present.</p>
+
+<p>So, what happens if <em>both</em> <code>links</code> and <code>ids</code> are present?</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71">Post #4 data</a></h4>
+
+<p>Below we can see that the blog post contains both related <code>links</code> and <code>ids</code> in <code>data</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #4&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This post has mixed links and data&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;relationships&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;comments&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;links&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;related&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;href&quot;</span><span class="p">:</span> <span class="s2">&quot;/posts/4/comments&quot;</span> <span class="p">},</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">41</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>      <span class="p">],</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this case, Ember Data will prefer the <code>data</code> and call <a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5"><code>findRecord</code> in the comment adapter</a>. This way, any records in the relationship that have already been loaded won&rsquo;t need to be loaded again. We will look at how reloading relationships works in the next couple of sections.</p>
+
+<p>Anyway, accessing the comments relationship on post #4 will load the comment in <code>data</code> and not use the related link:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">post</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">).</span><span class="nx">mapBy</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span> <span class="c1">// =&gt; [&quot;Comment 41 was loaded via findRecord in the comment adapter&quot;]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that if the post data gets reloaded and only has a <code>links</code> section, it will correctly <a href="https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L399">set <code>hasLoaded</code> to false</a> so that the next attempt to load the relationship will use the link.</p>
+
+<h2>Reloading <code>links</code></h2>
+
+<p>Speaking of subsequent loads of relationship data, let&rsquo;s look at how Ember Data deals with reloading relationships. There are many possible scenarios, so let&rsquo;s arbitrarily start where we just were: an updated link.</p>
+
+<p>Let&rsquo;s assume we have the previous post (<a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L54-L71">post #4</a>) loaded, and when we reload the blog post, we just get a <code>link</code>, like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #4&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This blog post has been updated&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;relationships&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;comments&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;links&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;related&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;href&quot;</span><span class="p">:</span> <span class="s2">&quot;/posts/4/comments&quot;</span> <span class="p">},</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What happens with this example when we try to load the comments relationship?</p>
+
+<p>Because the <a href="https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L377">link hasn&rsquo;t changed</a>, it will not cause <code>hasLoaded</code> to be <a href="https://github.com/emberjs/data/blob/v2.13.1/addon/-private/system/relationships/state/relationship.js#L399">set to false</a>. So accessing the comments relationship after reloading the blog post will continue to use the already loaded data.</p>
+
+<p>However, if the value of the related link changes, it will reload the relationship. For example, if reloading the post returns a link with a different url:</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L80-L94">Updated post #4 data</a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #4&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This blog post has been updated and has a new related link&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;relationships&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;comments&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;links&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;related&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;href&quot;</span><span class="p">:</span> <span class="s2">&quot;/posts/4/comments?1&quot;</span> <span class="p">},</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then accessing the relationship will trigger reloading with the <code>link</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">post</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">).</span><span class="nx">mapBy</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="c1">// =&gt; [&quot;Comment 41 was loaded via findHasMany in the post adapter&quot;, &quot;Comment 42 was loaded via findHasMany in the post adapter&quot;]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Reloading <code>data</code></h2>
+
+<p>Ok, let&rsquo;s say we reload the post and now there&rsquo;s more data. For this example, we&rsquo;ll go back to <a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L27-L43">post #2</a>, which has three comments in the <code>data</code> section. When reloaded, two comments were added and one was deleted.</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/post.js#L99-L116">Updated post #2 data</a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #2&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This blog post&#39;s comments relationship has a data section, and has been updated with new comments&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;relationships&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;comments&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>      <span class="p">],</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Just like before, the comments are loaded through the <a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/comment.js#L10">comment adapter&rsquo;s <code>findRecord</code> hook</a>, but this time the only comments loaded are those that <em>haven&rsquo;t already been loaded</em>.</p>
+
+<p>We can verify this by adding a <a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/comment.js#L11">logging statement to the comment adapter</a>. After reloading the post, we can see the correct comments.</p>
+
+<blockquote><p>Comment 21 was loaded via findRecord in the comment adapter
+Comment 23 was loaded via findRecord in the comment adapter
+Comment 24 was loaded via findRecord in the comment adapter
+Comment 25 was loaded via findRecord in the comment adapter</p></blockquote>
+
+<p>And in the developer console we see that the <a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-2/app/adapters/comment.js#L10">comment adapter&rsquo;s <code>findRecord</code> hook</a> was only called with the new records:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>&lt;ember-data-relationships-examples@adapter:comment::ember361&gt; findRecord for comment 24
+</span><span class='line'>&lt;ember-data-relationships-examples@adapter:comment::ember361&gt; findRecord for comment 25
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Summary</h2>
+
+<p>Depending on the contents of the <code>relationships</code> section, ember-data will call different hooks in your adapters to load relationship data. The following table summarizes which hooks will be called in each situation.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th colspan="2" rowspan="2" class="empty-corner"></th>
+      <th colspan="2">
+        <code>data.@each.id</code>
+      </th>
+    </tr>
+    <tr>
+      <th>not present</th>
+      <th>present</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="2">
+        <code>link.related</code>
+      </th>
+
+      <th>not present</th>
+
+      <td>nothing</td>
+      <td><code>adapter:comment findRecord</code></td>
+    </tr>
+
+    <tr>
+      <th>present</th>
+
+      <td><code>adapter:post findHasMany</code></td>
+      <td><code>adapter:comment findRecord</code></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Up Next</h2>
+
+<p>In <a href="http://amielmartin.com/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/">Part 3</a>, we&rsquo;ll look at how to load relationships that do not have existing links or data.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How Ember Data Loads Async Relationships: Part 1]]></title>
+    <link href="http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1/"/>
+    <updated>2017-05-05T16:02:46-08:00</updated>
+    <id>http://amielmartin.com/blog/2017/05/05/how-ember-data-loads-relationships-part-1</id>
+    <content type="html"><![CDATA[<p><span class="embadge" data-start="2.12.0"><span></p>
+
+<p>Ember Data has two main ways to load asynchronous relationship data through adapters. It is not always obvious when or why Ember Data calls the adapter hooks that it does, or doesn&rsquo;t.</p>
+
+<p>In Part 1, we&rsquo;ll explore how Ember Data responds to a few different common scenarios. In later posts we&rsquo;ll look at some less-straight-forward examples.</p>
+
+<!--More-->
+
+
+<h2>Housekeeping</h2>
+
+<p>Before we get started, let&rsquo;s talk about scope. All examples here will be in <code>JSONAPI</code>. In most cases, this will translate pretty easily for users of <code>RESTAdapter</code> or <code>ActiveModelAdapter</code>.</p>
+
+<h3>Examples</h3>
+
+<p>For all of the following examples, we&rsquo;ll be using the simple blog with posts and comments example. This is an easy relationship to use without having to explain any domain concepts.</p>
+
+<p>The code for these examples can be found at <a href="https://github.com/amiel/ember-data-relationships-examples/tree/part-1">github.com/amiel/ember-data-relationships-examples</a>. Many examples are trimmed for brevity and the full source can be easily found by clicking on the filename.</p>
+
+<p>Examples of <code>JSONAPI</code> data are hard-coded in <a href="https://github.com/amiel/ember-data-relationships-examples/tree/part-1/app/adapters">the adapters</a>.</p>
+
+<p>Here are the models we&rsquo;ll be working with:</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/models/post.js"><code>app/models/post.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">export</span> <span class="k">default</span> <span class="nx">DS</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">title</span><span class="o">:</span> <span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">),</span>
+</span><span class='line'>  <span class="nx">body</span><span class="o">:</span> <span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">),</span>
+</span><span class='line'>  <span class="nx">comments</span><span class="o">:</span> <span class="nx">hasMany</span><span class="p">(),</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/models/comment.js"><code>app/models/comment.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">export</span> <span class="k">default</span> <span class="nx">DS</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">post</span><span class="o">:</span> <span class="nx">belongsTo</span><span class="p">(),</span>
+</span><span class='line'>  <span class="nx">message</span><span class="o">:</span> <span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;string&#39;</span><span class="p">),</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Links</h2>
+
+<p><code>JSONAPI</code> allows for specifying that a <a href="http://jsonapi.org/format/#document-resource-object-related-resource-links">relationship should be loaded via a url</a> specified by the server.</p>
+
+<p>Let&rsquo;s see how this works with our first example blog post: Post #1.</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/post.js#L13-L25">Post #1 data</a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #1&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This post&#39;s comments relationship has a links section&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;relationships&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;comments&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;links&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="nt">&quot;related&quot;</span><span class="p">:</span> <span class="s2">&quot;/posts/1/comments&quot;</span> <span class="p">},</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this example, because the <code>comments</code> key under <code>relationships</code> matches the name of the <code>comments</code> relationship defined in our post model, Ember Data will use the provided link to load data for that relationship. The <a href="https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findHasMany">default</a> <a href="https://github.com/emberjs/data/blob/v2.13.1/addon/adapters/rest.js#L641-L693">implementation</a>  adds any url prefix configuration to the provided url (such as the host) and fires off an ajax request to the provided link.</p>
+
+<p>Therefore, accessing this relationship would cause the following ajax request:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">post</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="c1">// GET /posts/1/comments</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>However, it is possible to override this behavior by defining <code>findHasMany</code> in the parent model&rsquo;s adapter:</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/post.js#L51"><code>app/adapters/post.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">findHasMany</span><span class="p">(</span><span class="nx">store</span><span class="p">,</span> <span class="nx">snapshot</span><span class="p">,</span> <span class="nx">link</span><span class="p">,</span> <span class="nx">relationship</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Here, snapshot is the post snapshot,</span>
+</span><span class='line'>  <span class="c1">// link === &quot;/posts/1/comments&quot;</span>
+</span><span class='line'>  <span class="c1">// and relationship holds metadata about the relationship, such as</span>
+</span><span class='line'>  <span class="c1">// relationship.type === &#39;comment&#39;</span>
+</span><span class='line'>  <span class="c1">// relationship.kind === &#39;hasMany&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// A very simple implementation (using ember-ajax) could be:</span>
+</span><span class='line'>  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;ajax&#39;</span><span class="p">).</span><span class="nx">request</span><span class="p">(</span><span class="nx">link</span><span class="p">);</span>
+</span><span class='line'><span class="p">},</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using links is arguably the simplest way to load relationships with Ember Data if your server supports it. It is also an extremely useful adapter hook to get around some limitations in Ember Data, as we will see in a later post in this series.</p>
+
+<h2>Including relationship ids</h2>
+
+<p>It is also possible to include the ids for each object in a relationship. <code>JSONAPI</code> calls this <a href="http://jsonapi.org/format/#document-resource-object-linkage"><code>Resource Linkage</code></a>.</p>
+
+<blockquote><p>Resource linkage in a compound document allows a client to link together all of the included resource objects without having to GET any URLs via links.</p>
+
+<p>&ndash; <a href="http://jsonapi.org/format/#document-resource-object-linkage">http://jsonapi.org/format/#document-resource-object-linkage</a></p></blockquote>
+
+<p>Let&rsquo;s see how this works with our next blog post example: Post #2.</p>
+
+<p>Unlike Post #1, Post #2 has &ldquo;data&rdquo; instead of &ldquo;links&rdquo; in the &ldquo;comments&rdquo; section. Here&rsquo;s what it looks like:</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/post.js#L27-L43">Post #2 data</a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #2&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This post&#39;s comments relationship has a data section&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;relationships&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;comments&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span> <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;comment&quot;</span> <span class="p">},</span>
+</span><span class='line'>      <span class="p">],</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notice that each comment is a <a href="http://jsonapi.org/format/#document-resource-identifier-objects">&ldquo;Resource Identifier Object&rdquo;</a>, meaning that it has an <code>id</code> and a <code>type</code>, but no <code>attributes</code>.</p>
+
+<p>With this post, Ember Data will load each comment through the comments adapter by calling its <code>findRecord</code> hook.</p>
+
+<p>Therefore, accessing this relationship would cause the following ajax requests:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">post</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="c1">// GET /comments/21</span>
+</span><span class='line'><span class="c1">// GET /comments/22</span>
+</span><span class='line'><span class="c1">// GET /comments/23</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As before, this bahavior can also be configured, this time by overriding the <code>findRecord</code> adapter hook in the comments adapter.</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/comment.js#L5"><code>app/adapters/comment.js</code></a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">findRecord</span><span class="p">(</span><span class="nx">store</span><span class="p">,</span> <span class="nx">type</span><span class="p">,</span> <span class="nx">id</span><span class="p">,</span> <span class="nx">snapshot</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Here, type is an object representing the model class.</span>
+</span><span class='line'>  <span class="c1">// type.modelName === &#39;comment&#39;</span>
+</span><span class='line'>  <span class="c1">// this hook will get called three times in each call, each with an</span>
+</span><span class='line'>  <span class="c1">// appropriate id and snapshot</span>
+</span><span class='line'>  <span class="c1">// id === snapshot.id</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">},</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Preloading the ids for relationships like this is nice when it makes sense for the interface to show placeholders for each item in the relationship and load details later.</p>
+
+<h3>Bonus Section</h3>
+
+<p>You might be wondering, is it a good idea to load each model of my <code>hasMany</code> relationship in a separate ajax request?</p>
+
+<p>In most cases, it is not a good idea. This is called the <a href="https://www.sitepoint.com/silver-bullet-n1-problem/">N+1 problem</a>. Meaning, to load a blog post and its comments, we would need N+1 requests, where N is the number of comments on the post.</p>
+
+<p>Fear not, as once again, Ember Data has your back. In order to turn N+1 requests into two requests, all you need to do is set <a href="https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#property_coalesceFindRequests"><code>coalesceFindRequests</code></a>. In this case, a different adapter hook will be called. Instead of <code>findRecord</code>, <a href="https://emberjs.com/api/data/classes/DS.JSONAPIAdapter.html#method_findMany"><code>findMany</code></a> will be called with an array of ids.</p>
+
+<h4><code>app/adapters/comment.js</code></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">coalesceFindRequests</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'><span class="nx">findMany</span><span class="p">(</span><span class="nx">store</span><span class="p">,</span> <span class="nx">type</span><span class="p">,</span> <span class="nx">ids</span><span class="p">,</span> <span class="nx">snapshots</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// ids === [&#39;21&#39;, &#39;22&#39;, &#39;23&#39;]</span>
+</span><span class='line'>  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_super</span><span class="p">(...</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">},</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This will, by default, cause the following ajax request:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">post</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="c1">// GET /comments?filter[id]=21,22,23</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>No Links, No Ids</h2>
+
+<p>So, what if the post data doesn&rsquo;t contain any relationship data, is it still possible to configure a way to load relationship data?</p>
+
+<p>Let&rsquo;s look at another blog post example: Post #3.</p>
+
+<h4><a href="https://github.com/amiel/ember-data-relationships-examples/blob/part-1/app/adapters/post.js#L45-L52">Post #3 data</a></h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;This is blog post #3&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This post&#39;s has no comments&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The short answer is &ldquo;no&rdquo;, Ember Data has no facility for this. The long answer is &ldquo;of course, anything is possible&rdquo;, but it will take some hacks.</p>
+
+<p>We&rsquo;ll take a look at how deal with this situation later in this series.</p>
+
+<p>Up next we&rsquo;ll look at what happens when relationship data changes in <a href="http://amielmartin.com/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Sending Morning Emails]]></title>
+    <link href="http://amielmartin.com/blog/2012/11/15/sending-morning-emails/"/>
+    <updated>2012-11-15T00:00:00-08:00</updated>
+    <id>http://amielmartin.com/blog/2012/11/15/sending-morning-emails</id>
+    <content type="html"><![CDATA[<p>NOTE: I originally wrote this when I was still working on <a href="http://strideapp.com">Stride</a>. I&rsquo;ve reposted it here for posterity. Here is the <a href="https://web.archive.org/web/20130522081001/https://strideapp.com/blog/2012/11/sending-morning-emails/">original post</a>.</p>
+
+<p>Reliably delivering time-based emails (daily, weekly, etc.) to users has always been a little tricky for web-based applications. There are multiple possible failure points, and we need to contend with different time zones.</p>
+
+<p>Currently, Stride sends two time-based emails:</p>
+
+<ol>
+<li>Your Monday morning weekly recap</li>
+<li>Task reminders</li>
+</ol>
+
+
+<p>We wanted both of these emails to arrive in the user&rsquo;s inbox in the morning. At first, this seems like a simple specification; we&rsquo;ll just send the emails off at 7am.</p>
+
+<p>But hold on a minute — if we send the Monday morning email at 7am PST, users in New York won&rsquo;t get their email until 10am, and even worse, our users in Australia won&rsquo;t get it until 1am on Tuesday; that certainly isn&rsquo;t Monday morning. What if we send it early enough so that everyone gets it before Monday morning? Unfortunately, if we send the it at 7am in eastern Australia, our users in Hawaii will get their Monday morning email at 11am on Sunday. That just isn&rsquo;t going to cut it.</p>
+
+<p>We decided to batch up the emails and send them off depending on each user&rsquo;s time zone. Here&rsquo;s how it works:</p>
+
+<!--More-->
+
+
+<h3>Getting the time zone from users</h3>
+
+<p>The only way to ensure people get their emails in the morning for them is to know their time zone, and while it&rsquo;s important to us that people get their emails in the morning, we didn&rsquo;t want to force them to configure a time zone. Don&rsquo;t get me wrong: if we hear that our users want the option to set their time zone, we&rsquo;ll provide it, but we want to keep the interface as simple as possible. You can read more about this decision in <a href="http://blog.strideapp.com/2012/09/the-invisible-interface/">Nathan&rsquo;s article</a>.</p>
+
+<p>Your browser knows what your time zone offset is, and your daylight savings configuration. So, thanks to <a href="https://bitbucket.org/pellepim/jstimezonedetect">jstimezonedetect</a>, we can make a pretty good guess as to your time zone setting using JavaScript.</p>
+
+<p><img src="http://amielmartin.com/images/autodetect_tz.png" title="Diagram of timezone detection" ></p>
+
+<figure class='code'><figcaption><span>Using jstz jstimezonedetect and jQuery to send the timezone to the server</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">timezone</span> <span class="o">=</span> <span class="nx">jstz</span><span class="p">.</span><span class="nx">determine_timezone</span><span class="p">();</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">timezone_name</span> <span class="o">=</span> <span class="nx">timezone</span><span class="p">.</span><span class="nx">name</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajaxPrefilter</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">,</span> <span class="nx">originalOptions</span><span class="p">,</span> <span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;X-Timezone&#39;</span><span class="p">,</span> <span class="nx">timezone_name</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can save the users &ldquo;automatic&rdquo; time zone like this (the rest of the code samples are written for Ruby on Rails, but the concepts should apply to any web-based environment):</p>
+
+<figure class='code'><figcaption><span>Storing user timezones; This can be placed in a before_filter</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">js_timezone</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="o">[</span><span class="s1">&#39;HTTP_X_TIMEZONE&#39;</span><span class="o">]</span>
+</span><span class='line'><span class="k">if</span> <span class="n">js_timezone</span><span class="o">.</span><span class="n">present?</span> <span class="o">&amp;&amp;</span> <span class="no">UserTimezone</span><span class="o">::</span><span class="no">TIMEZONE_TZNAMES</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">js_timezone</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">current_user</span><span class="o">.</span><span class="n">update_attributes</span> <span class="ss">auto_timezone</span><span class="p">:</span> <span class="n">js_timezone</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In case we ever need to overwrite the automatic configuration for any reason, we have a separate column in the database that allows us to do so.</p>
+
+<h3>Determining when to send the emails</h3>
+
+<p>Now that we have most user&rsquo;s time zones, we can send them their Monday morning and task reminder emails at 7am in their time zone. Here&rsquo;s how that works.</p>
+
+<p>We run a cron task every hour. Using the Monday mailer as an example, the first thing it does is answer the following question: &ldquo;In what time zones is it now 7am on Monday?&rdquo; Here is that question in code:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">TIMEZONES</span> <span class="o">=</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">TimeZone</span><span class="o">.</span><span class="n">all</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">timezones_where_the_day_and_hour_are</span><span class="p">(</span><span class="n">wday</span><span class="p">,</span> <span class="n">hour</span><span class="p">,</span> <span class="n">time</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">current</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">TIMEZONES</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">z</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">in_time_zone</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">t</span><span class="o">.</span><span class="n">wday</span> <span class="o">==</span> <span class="n">wday</span> <span class="o">&amp;&amp;</span> <span class="n">t</span><span class="o">.</span><span class="n">hour</span> <span class="o">==</span> <span class="n">hour</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:tzinfo</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:name</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Confusingly enough, the answer could be zero time zones, or quite a few. And, of course because of Daylight Savings Time, the answer will be different depending on the season.
+Armed with the list of time zones in which it is time to send &ldquo;morning&rdquo; emails, we can make a quick indexed query for users in those time zones:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Given a list of timezones, return all the ids for users in all those timezones.</span>
+</span><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">user_ids_in_timezones</span><span class="p">(</span><span class="n">timezones</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">[]</span> <span class="k">if</span> <span class="n">timezones</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">timezones</span> <span class="o">&lt;&lt;</span> <span class="kp">nil</span> <span class="k">if</span> <span class="n">timezones</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="s1">&#39;Etc/UTC&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">where</span><span class="p">(</span><span class="ss">timezone</span><span class="p">:</span> <span class="n">timezones</span><span class="p">)</span><span class="o">.</span><span class="n">pluck</span><span class="p">(</span><span class="ss">:user_id</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Users without a time zone configured will get their email at 7am UTC.</p>
+
+<p>In the case of task reminders, we store the time zone and date on each reminder so that we can do an indexed query given the appropriate time zones on any given date.</p>
+
+<h3>Queueing up the emails</h3>
+
+<p>Now that we have a list of users that need Monday morning emails (or task reminders that need to be sent), we can go ahead and fire off those emails. In order to track the progress and hopeful success of each email, we queue each email individually with <a href="https://github.com/blog/542-introducing-resque">Resque</a>, a background job runner written by the awesome folks at Github.</p>
+
+<figure class='code'><figcaption><span>Queueing up emails</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">UserTimezone</span><span class="o">.</span><span class="n">user_ids_in_timezones</span><span class="p">(</span><span class="n">timezones</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">user_id</span><span class="o">|</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Queuing the MondayMailer to </span><span class="si">#{</span> <span class="n">user_id</span> <span class="si">}</span><span class="s2"> at </span><span class="si">#{</span> <span class="n">time</span> <span class="si">}</span><span class="s2">!&quot;</span>
+</span><span class='line'>  <span class="no">Resque</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="o">::</span><span class="no">MondayMailer</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Not only is Resque great run to processes in a Rails environment, it also has a front-end to inspect the jobs in the queue, what&rsquo;s currently running, and retry failed jobs.</p>
+
+<h3>On Cron and Queues</h3>
+
+<p>Another part of this system that has been handy for us is the way we run cron jobs.</p>
+
+<p>We&rsquo;ve had a lot of issues in the past running cron jobs for Rails. Logging is difficult, debugging failures is hard, and the environment is tricky to set up. So instead of directly running Rails code, we have cron just queue up a resque job. This simplifies the environment our cron task needs and moves the logging and failure handling to resque, which is far more desirable.</p>
+
+<p>The Resque job takes a time for when the job was requested. This way, the queue could be backed up (or have failed entirely) so while jobs might still run late, they will at least know what time they were meant to be run.</p>
+
+<p>Here&rsquo;s the script that cron calls directly (script/rescque_cron_task):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;resque&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">load</span> <span class="s1">&#39;config/initializers/resque.rb&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">ResqueCron</span>
+</span><span class='line'>  <span class="vi">@queue</span> <span class="o">=</span> <span class="ss">:cron</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">ARGV</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">task</span><span class="o">|</span>
+</span><span class='line'>  <span class="c1"># Use Time.now instead of Time.current because we don&#39;t have Rails.</span>
+</span><span class='line'>  <span class="c1"># Besides, it gets serialized as a string in redis and Time.zone.parse parses</span>
+</span><span class='line'>  <span class="c1"># it correctly on the Rails side...</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Enqueuing </span><span class="si">#{</span> <span class="n">task</span> <span class="si">}</span><span class="s2"> at </span><span class="si">#{</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="no">Resque</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="no">ResqueCron</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A neat byproduct of this is that if the cron job fails completely, I can easily queue up the cron jobs with the time they were supposed to run. This works because each part in the system takes a time in as opposed to calling Time.current directly.</p>
+
+<h3>Conclusion</h3>
+
+<p>So far this setup has proven extremely reliable for us. Because of the system design, the one time it failed (due to a Ruby version issue) I was able to easily resend all of the emails by re-enqueuing the necessary cron jobs with the relevant time.</p>
+
+<p>The process of delivering emails is something like this:</p>
+
+<ol>
+<li>Users get their time zone automatically set just by using the app</li>
+<li>Cron queues a job in resque for each type of email every hour</li>
+<li>The resque job compiles a list of users or task reminders that need emails based on the time it was meant to run</li>
+<li>The resulting worker queues up another resque job for each email that actually needs to be delivered</li>
+</ol>
+
+
+<p><img src="http://amielmartin.com/images/timezone_queue.png" alt="Queueing process diagram" /></p>
+
+<p>Although it&rsquo;s a fairly complex system for what seems like a simple task, it&rsquo;s important to us that our users can trust they&rsquo;ll get their email when they expect it. This way we can provide a better overall user experience.</p>
+
+<p>If you are a Stride user, and you are not receiving your Monday email between 7am and 8am in your time zone, please let us know.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Using I18n and Draper to Render Database Attributes]]></title>
+    <link href="http://amielmartin.com/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes/"/>
+    <updated>2011-11-04T20:27:04-08:00</updated>
+    <id>http://amielmartin.com/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes</id>
+    <content type="html"><![CDATA[<p>Using I18n and Draper to Render Database Attributes</p>
+
+<p>TL;DR: Check out my additions to ApplicationDecorator <a href="https://gist.github.com/1338134">in this gist</a>.</p>
+
+<p>Update: This has been released as a gem: <a href="https://github.com/carnesmedia/olson">Olson</a>.</p>
+
+<p>When my models have an attribute that matters to the code (like <code>Admin#role</code> or <code>User#status</code>), I like to store the value as a string that makes sense as an identifier. For example, <code>User#status</code> might be <code>'active'</code> or <code>'awaiting_approval'</code>. However, when it comes time to render the admin&rsquo;s role or the users status in the view, we want to show &lsquo;Awaiting approval&rsquo; instead of &lsquo;awaiting_approval&rsquo;. Another example of this sort of thing is the <code>#type</code> attribute for STI.</p>
+
+<p>Ok, this isn’t too hard, we can just use <code>#humanize</code>. But, here’s what happens: <!--More--></p>
+
+<figure class='code'><figcaption><span>In some views</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x"># Show a user-friendly version of our identifier</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">humanize</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Now we need to customize some of them, use I18n</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">t</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">humanize</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># But that&#39;s polluting our I18n namespace</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">t</span> <span class="ss">:&quot;user.status.</span><span class="si">#{</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span> <span class="si">}</span><span class="ss">&quot;</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">humanize</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Ok, this is getting out of hand, lets refactor this to the model</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status_string</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># This breaks down when you need to render the select field to edit this user</span>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="no">User</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">status</span><span class="p">:</span> <span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">status_string</span><span class="p">,</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># So, how &#39;bout a helper</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">humanize_with_i18n</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="sx">%(user status)</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Not too bad</span>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Ah, this is a bit better</span>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="n">user_roles_for_select</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Model or helper code</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">User</span> <span class="o">&lt;</span> <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">status_string</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="n">status</span><span class="p">,</span> <span class="ss">scope</span><span class="p">:</span> <span class="sx">%w(user status)</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">status</span><span class="o">.</span><span class="n">humanize</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">another_thing_string</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Or something like:</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">UserHelper</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">humanize_with_i18n</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">scope</span> <span class="o">=</span> <span class="o">[]</span><span class="p">)</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="n">string</span><span class="p">,</span> <span class="ss">scope</span><span class="p">:</span> <span class="n">scope</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">string</span><span class="o">.</span><span class="n">humanize</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># The method prefix tells me that this should be in an object</span>
+</span><span class='line'>  <span class="c1"># But it doesn&#39;t belong in our model, does it?</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">user_roles_for_select</span>
+</span><span class='line'>    <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ok, let&rsquo;s be fair. All of these solutions are actually quite fine. In most cases Ya Ain&rsquo;t Gonna Need anything more complicated. The helper version handles most situations just fine.</p>
+
+<p>However, after a bunch of this I tend to end up with a bunch of methods in my model that seem to be somewhat presentation related, and/or methods in my helper that seem like they belong to an object and not in the &ldquo;global&rdquo; view namespace.</p>
+
+<h3>Enter decorators</h3>
+
+<p>A decorator (or presenter) is an object that holds the presentation logic for a model, so that the model can stick to the business logic. I&rsquo;ve been using a great gem called <a href="https://github.com/jcasimir/draper">Draper</a>. I won&rsquo;t go into too much detail about how to use Draper (check out the <a href="https://github.com/jcasimir/draper">Github readme</a> or <a href="http://railscasts.com/episodes/286-draper">Railscast</a>).</p>
+
+<p>Here&rsquo;s how you would implement the above pattern with Draper:</p>
+
+<figure class='code'><figcaption><span>user_decorator.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">UserDecorator</span> <span class="o">&lt;</span> <span class="no">ApplicationDecorator</span>
+</span><span class='line'>  <span class="n">decorates</span> <span class="ss">:user</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">status</span>
+</span><span class='line'>    <span class="c1"># self.model gives us the User</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="ss">:status</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># This could be moved to ApplicationDecorator (or ApplicationHelper),</span>
+</span><span class='line'>  <span class="c1"># but is shown here for simplicity.</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">humanize_with_i18n</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="n">value</span><span class="p">,</span> <span class="ss">scope</span><span class="p">:</span> <span class="o">[</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="n">attribute</span><span class="o">]</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">value</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">status_options</span>
+</span><span class='line'>    <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="ss">:status</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then, in our view:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">decorator</span><span class="o">.</span><span class="n">status</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">UserDecorator</span><span class="o">.</span><span class="n">status_options</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Bonus</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ApplicationHelper</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">current_user</span>
+</span><span class='line'>    <span class="k">super</span><span class="o">.</span><span class="n">decorator</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>My Abstractions</h3>
+
+<p>And now the reason for this post. I find that I use this pattern frequently, so I generalized it to <code>ApplicationDecorator</code>. It adds a class method <code>ApplicationDecorator.humanizes</code> that can be used in each decorator to define attributes that need automatic humanization.</p>
+
+<p>The full source can be found here: <a href="https://gist.github.com/1338134.">https://gist.github.com/1338134.</a></p>
+
+<p>Here&rsquo;s how you would use it:</p>
+
+<figure class='code'><figcaption><span>user_decorator.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">UserDecorator</span> <span class="o">&lt;</span> <span class="no">ApplicationDecorator</span>
+</span><span class='line'>  <span class="n">decorates</span> <span class="ss">:user</span>
+</span><span class='line'>  <span class="n">humanizes</span> <span class="ss">:status</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">status_options</span>
+</span><span class='line'>    <span class="n">options_for_select_with_i18n</span> <span class="ss">:status</span><span class="p">,</span> <span class="n">model_class</span><span class="o">::</span><span class="no">STATUS_OPTIONS</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>And in a view</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">UserDecorator</span><span class="o">.</span><span class="n">status_options</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>To Conclude</h3>
+
+<p>I like this because each layer is really simple and really focuses on only what it needs to.</p>
+
+<p>The view doesn&rsquo;t have to know that that data is not user-friendly.
+The model isn&rsquo;t polluted with methods designed for the view.
+There isn&rsquo;t much complexity or black-magic to make this abstraction simple.
+If this pattern works out in my current project I will probably pull this out into a gem. Would anyone else find this useful? If I do I&rsquo;ll be looking for name suggestions&hellip;</p>
+]]></content>
+  </entry>
+  
+</feed>

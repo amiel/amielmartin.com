@@ -1,0 +1,368 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Sending Morning Emails - Amiel Martin</title>
+  <meta name="author" content="Amiel Martin">
+
+  
+  <meta name="description" content="Sending Morning Emails Updated Janurary 1, 2015 in rails NOTE: I originally wrote this when I was still working on Stride. I&rsquo;ve reposted it &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="google-site-verification" content="UGd4WRAL2iSgwFqmybaK3Ck9a-1Jd-dH0PKG_PpGXts" />
+
+  
+  <link rel="canonical" href="http://amielmartin.com/blog/2012/11/15/sending-morning-emails">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Amiel Martin" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-1309955-6']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+  <body>
+    <a href="/" class="home-icon">
+      <img src="/images/home.png"/>
+    </a>
+
+    <article role="article" class="full-single-article">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        <h1>Sending Morning Emails</h1>
+        <div class="meta">
+          
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+<time datetime="2015-01-05T00:00:00-08:00" class="updated">Updated Janurary 1, 2015</time>
+          
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/rails/'>rails</a>
+  
+</span>
+
+
+        </div>
+        <p>NOTE: I originally wrote this when I was still working on <a href="http://strideapp.com">Stride</a>. I&rsquo;ve reposted it here for posterity. Here is the <a href="https://web.archive.org/web/20130522081001/https://strideapp.com/blog/2012/11/sending-morning-emails/">original post</a>.</p>
+
+<p>Reliably delivering time-based emails (daily, weekly, etc.) to users has always been a little tricky for web-based applications. There are multiple possible failure points, and we need to contend with different time zones.</p>
+
+<p>Currently, Stride sends two time-based emails:</p>
+
+<ol>
+<li>Your Monday morning weekly recap</li>
+<li>Task reminders</li>
+</ol>
+
+
+<p>We wanted both of these emails to arrive in the user&rsquo;s inbox in the morning. At first, this seems like a simple specification; we&rsquo;ll just send the emails off at 7am.</p>
+
+<p>But hold on a minute — if we send the Monday morning email at 7am PST, users in New York won&rsquo;t get their email until 10am, and even worse, our users in Australia won&rsquo;t get it until 1am on Tuesday; that certainly isn&rsquo;t Monday morning. What if we send it early enough so that everyone gets it before Monday morning? Unfortunately, if we send the it at 7am in eastern Australia, our users in Hawaii will get their Monday morning email at 11am on Sunday. That just isn&rsquo;t going to cut it.</p>
+
+<p>We decided to batch up the emails and send them off depending on each user&rsquo;s time zone. Here&rsquo;s how it works:</p>
+
+<!--More-->
+
+
+<h3>Getting the time zone from users</h3>
+
+<p>The only way to ensure people get their emails in the morning for them is to know their time zone, and while it&rsquo;s important to us that people get their emails in the morning, we didn&rsquo;t want to force them to configure a time zone. Don&rsquo;t get me wrong: if we hear that our users want the option to set their time zone, we&rsquo;ll provide it, but we want to keep the interface as simple as possible. You can read more about this decision in <a href="http://blog.strideapp.com/2012/09/the-invisible-interface/">Nathan&rsquo;s article</a>.</p>
+
+<p>Your browser knows what your time zone offset is, and your daylight savings configuration. So, thanks to <a href="https://bitbucket.org/pellepim/jstimezonedetect">jstimezonedetect</a>, we can make a pretty good guess as to your time zone setting using JavaScript.</p>
+
+<p><img src="/images/autodetect_tz.png" title="Diagram of timezone detection" ></p>
+
+<figure class='code'><figcaption><span>Using jstz jstimezonedetect and jQuery to send the timezone to the server</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">timezone</span> <span class="o">=</span> <span class="nx">jstz</span><span class="p">.</span><span class="nx">determine_timezone</span><span class="p">();</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">timezone_name</span> <span class="o">=</span> <span class="nx">timezone</span><span class="p">.</span><span class="nx">name</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajaxPrefilter</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">,</span> <span class="nx">originalOptions</span><span class="p">,</span> <span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;X-Timezone&#39;</span><span class="p">,</span> <span class="nx">timezone_name</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can save the users &ldquo;automatic&rdquo; time zone like this (the rest of the code samples are written for Ruby on Rails, but the concepts should apply to any web-based environment):</p>
+
+<figure class='code'><figcaption><span>Storing user timezones; This can be placed in a before_filter</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">js_timezone</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="o">[</span><span class="s1">&#39;HTTP_X_TIMEZONE&#39;</span><span class="o">]</span>
+</span><span class='line'><span class="k">if</span> <span class="n">js_timezone</span><span class="o">.</span><span class="n">present?</span> <span class="o">&amp;&amp;</span> <span class="no">UserTimezone</span><span class="o">::</span><span class="no">TIMEZONE_TZNAMES</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">js_timezone</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">current_user</span><span class="o">.</span><span class="n">update_attributes</span> <span class="ss">auto_timezone</span><span class="p">:</span> <span class="n">js_timezone</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In case we ever need to overwrite the automatic configuration for any reason, we have a separate column in the database that allows us to do so.</p>
+
+<h3>Determining when to send the emails</h3>
+
+<p>Now that we have most user&rsquo;s time zones, we can send them their Monday morning and task reminder emails at 7am in their time zone. Here&rsquo;s how that works.</p>
+
+<p>We run a cron task every hour. Using the Monday mailer as an example, the first thing it does is answer the following question: &ldquo;In what time zones is it now 7am on Monday?&rdquo; Here is that question in code:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">TIMEZONES</span> <span class="o">=</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">TimeZone</span><span class="o">.</span><span class="n">all</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">timezones_where_the_day_and_hour_are</span><span class="p">(</span><span class="n">wday</span><span class="p">,</span> <span class="n">hour</span><span class="p">,</span> <span class="n">time</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">current</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">TIMEZONES</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">z</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">in_time_zone</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">t</span><span class="o">.</span><span class="n">wday</span> <span class="o">==</span> <span class="n">wday</span> <span class="o">&amp;&amp;</span> <span class="n">t</span><span class="o">.</span><span class="n">hour</span> <span class="o">==</span> <span class="n">hour</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:tzinfo</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:name</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Confusingly enough, the answer could be zero time zones, or quite a few. And, of course because of Daylight Savings Time, the answer will be different depending on the season.
+Armed with the list of time zones in which it is time to send &ldquo;morning&rdquo; emails, we can make a quick indexed query for users in those time zones:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Given a list of timezones, return all the ids for users in all those timezones.</span>
+</span><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">user_ids_in_timezones</span><span class="p">(</span><span class="n">timezones</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">[]</span> <span class="k">if</span> <span class="n">timezones</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">timezones</span> <span class="o">&lt;&lt;</span> <span class="kp">nil</span> <span class="k">if</span> <span class="n">timezones</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="s1">&#39;Etc/UTC&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">where</span><span class="p">(</span><span class="ss">timezone</span><span class="p">:</span> <span class="n">timezones</span><span class="p">)</span><span class="o">.</span><span class="n">pluck</span><span class="p">(</span><span class="ss">:user_id</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Users without a time zone configured will get their email at 7am UTC.</p>
+
+<p>In the case of task reminders, we store the time zone and date on each reminder so that we can do an indexed query given the appropriate time zones on any given date.</p>
+
+<h3>Queueing up the emails</h3>
+
+<p>Now that we have a list of users that need Monday morning emails (or task reminders that need to be sent), we can go ahead and fire off those emails. In order to track the progress and hopeful success of each email, we queue each email individually with <a href="https://github.com/blog/542-introducing-resque">Resque</a>, a background job runner written by the awesome folks at Github.</p>
+
+<figure class='code'><figcaption><span>Queueing up emails</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">UserTimezone</span><span class="o">.</span><span class="n">user_ids_in_timezones</span><span class="p">(</span><span class="n">timezones</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">user_id</span><span class="o">|</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Queuing the MondayMailer to </span><span class="si">#{</span> <span class="n">user_id</span> <span class="si">}</span><span class="s2"> at </span><span class="si">#{</span> <span class="n">time</span> <span class="si">}</span><span class="s2">!&quot;</span>
+</span><span class='line'>  <span class="no">Resque</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="o">::</span><span class="no">MondayMailer</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Not only is Resque great run to processes in a Rails environment, it also has a front-end to inspect the jobs in the queue, what&rsquo;s currently running, and retry failed jobs.</p>
+
+<h3>On Cron and Queues</h3>
+
+<p>Another part of this system that has been handy for us is the way we run cron jobs.</p>
+
+<p>We&rsquo;ve had a lot of issues in the past running cron jobs for Rails. Logging is difficult, debugging failures is hard, and the environment is tricky to set up. So instead of directly running Rails code, we have cron just queue up a resque job. This simplifies the environment our cron task needs and moves the logging and failure handling to resque, which is far more desirable.</p>
+
+<p>The Resque job takes a time for when the job was requested. This way, the queue could be backed up (or have failed entirely) so while jobs might still run late, they will at least know what time they were meant to be run.</p>
+
+<p>Here&rsquo;s the script that cron calls directly (script/rescque_cron_task):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;resque&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">load</span> <span class="s1">&#39;config/initializers/resque.rb&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">ResqueCron</span>
+</span><span class='line'>  <span class="vi">@queue</span> <span class="o">=</span> <span class="ss">:cron</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">ARGV</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">task</span><span class="o">|</span>
+</span><span class='line'>  <span class="c1"># Use Time.now instead of Time.current because we don&#39;t have Rails.</span>
+</span><span class='line'>  <span class="c1"># Besides, it gets serialized as a string in redis and Time.zone.parse parses</span>
+</span><span class='line'>  <span class="c1"># it correctly on the Rails side...</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Enqueuing </span><span class="si">#{</span> <span class="n">task</span> <span class="si">}</span><span class="s2"> at </span><span class="si">#{</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="no">Resque</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="no">ResqueCron</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A neat byproduct of this is that if the cron job fails completely, I can easily queue up the cron jobs with the time they were supposed to run. This works because each part in the system takes a time in as opposed to calling Time.current directly.</p>
+
+<h3>Conclusion</h3>
+
+<p>So far this setup has proven extremely reliable for us. Because of the system design, the one time it failed (due to a Ruby version issue) I was able to easily resend all of the emails by re-enqueuing the necessary cron jobs with the relevant time.</p>
+
+<p>The process of delivering emails is something like this:</p>
+
+<ol>
+<li>Users get their time zone automatically set just by using the app</li>
+<li>Cron queues a job in resque for each type of email every hour</li>
+<li>The resque job compiles a list of users or task reminders that need emails based on the time it was meant to run</li>
+<li>The resulting worker queues up another resque job for each email that actually needs to be delivered</li>
+</ol>
+
+
+<p><img src="/images/timezone_queue.png" alt="Queueing process diagram" /></p>
+
+<p>Although it&rsquo;s a fairly complex system for what seems like a simple task, it&rsquo;s important to us that our users can trust they&rsquo;ll get their email when they expect it. This way we can provide a better overall user experience.</p>
+
+<p>If you are a Stride user, and you are not receiving your Monday email between 7am and 8am in your time zone, please let us know.</p>
+
+
+        <hr class="divider-short"/>
+
+        
+        <section>
+          <h1>Comments</h1>
+          <div id="disqus_thread" aria-live="polite"></div>
+        </section>
+        
+      </div>
+    </div>
+  </div>
+</article>
+
+<hr class="divider-short"/>
+
+<div class="archive-link">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        
+          <a class="pull-left" href="/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes/" title="Previous Post: Using I18n and Draper to Render Database Attributes">&laquo; Previous: Using I18n and Draper to Render Database Attributes</a>
+        
+
+        
+          <a class="pull-right" href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/" title="Next Post: How Ember Data Loads Async Relationships: Part 1">Next: How Ember Data Loads Async Relationships: Part 1 &raquo;</a>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="//embadge.io/v1/badge.js" type="text/javascript"></script>
+
+
+
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'amielmartin';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amielmartin.com/blog/2012/11/15/sending-morning-emails/';
+        var disqus_url = 'http://amielmartin.com/blog/2012/11/15/sending-morning-emails/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<footer id="footer" class="her-row">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-1">
+  <a href="/"><h4>Home</h4></a>
+</div>
+
+<div class="col-md-2">
+  <div class="social-icon-list">
+    
+    <a href="https://twitter.com/amielmartin"><img src="/images/glyphicons_social_31_twitter.png"/></a>
+    
+
+    
+    <a href="https://github.com/amiel"><img src="/images/glyphicons_social_21_github.png"/></a>
+    
+
+    
+    <a href="https://linkedin.com/in/amielmartin"><img src="/images/glyphicons_social_17_linked_in.png"/></a>
+    
+
+    
+    <a href="mailto:amiel@amielmartin.com"><img src="/images/glyphicons_social_39_e-mail.png"/></a>
+    
+  </div>
+</div>
+
+    </div>
+  </div>
+</footer>
+
+
+  </body>
+</html>

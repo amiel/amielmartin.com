@@ -1,0 +1,472 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>All Posts - Amiel Martin</title>
+  <meta name="author" content="Amiel Martin">
+
+  
+  <meta name="description" content="All Posts How Ember Data Loads Async Relationships This post simply links to each part in the series. in ember-data, ember.js Read on &rarr; How &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="google-site-verification" content="UGd4WRAL2iSgwFqmybaK3Ck9a-1Jd-dH0PKG_PpGXts" />
+
+  
+  <link rel="canonical" href="http://amielmartin.com/posts">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Amiel Martin" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-1309955-6']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+  <body>
+    <a href="/" class="home-icon">
+      <img src="/images/home.png"/>
+    </a>
+
+    <div class="all-posts">
+  <div class="container">
+    <div class="row">
+      <div class="list-title col-md-offset-3 col-md-6">
+        <h4>All Posts</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="article-list">
+    <div class="container">
+      
+      
+      <div class="row">
+        <div class="col-md-offset-3 col-md-6">
+          <article>
+  <h2><a href="/blog/2017/08/31/how-ember-data-loads-async-relationships/">How Ember Data Loads Async Relationships</a></h2>
+  
+  <p>
+    <p>This post simply links to each part in the series.</p>
+
+
+
+
+  </p>
+  <span class="meta">
+    
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2017-08-31T22:07:32-07:00" pubdate data-updated="true"></time>
+    
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ember-data/'>ember-data</a>, <a class='category' href='/blog/categories/ember-dot-js/'>ember.js</a>
+  
+</span>
+
+
+  </span>
+
+  
+    <a class="full-article-link pull-right" rel="full-article" href="/blog/2017/08/31/how-ember-data-loads-async-relationships/">Read on &rarr;</a>
+  
+</article>
+
+        </div>
+      </div>
+      
+      
+      <div class="row">
+        <div class="col-md-offset-3 col-md-6">
+          <article>
+  <h2><a href="/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/">How Ember Data Loads Async Relationships: Part 3</a></h2>
+  
+  <p>
+    <p><span class="embadge" data-start="2.12.0"><span></p>
+
+
+
+
+<p>Greetings! Please read <a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> and <a href="/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a> before continuing on.</p>
+
+
+
+
+<p><a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> explored how Ember Data responds to a few common scenarios. <a href="/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Part 2</a> discussed some less straightforward examples. Part 3 will examine how to load relationships when the API does not provide data or links.</p>
+
+
+
+
+  </p>
+  <span class="meta">
+    
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2017-07-17T08:53:32-08:00" pubdate data-updated="true">July 17, 2017</time>
+    
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ember-data/'>ember-data</a>, <a class='category' href='/blog/categories/ember-dot-js/'>ember.js</a>
+  
+</span>
+
+
+  </span>
+
+  
+    <a class="full-article-link pull-right" rel="full-article" href="/blog/2017/07/17/how-ember-data-loads-async-relationships-part-3/">Read on &rarr;</a>
+  
+</article>
+
+        </div>
+      </div>
+      
+      
+      <div class="row">
+        <div class="col-md-offset-3 col-md-6">
+          <article>
+  <h2><a href="/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">How Ember Data Loads Async Relationships: Part 2</a></h2>
+  
+  <p>
+    <p><span class="embadge" data-start="2.12.0"><span></p>
+
+
+
+
+<p>If you haven&rsquo;t already read <a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a>, I recommend doing that now, as this continues right where we left off.</p>
+
+
+
+
+<p><a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Part 1</a> explored how Ember Data responds to a few common scenarios. In Part 2, we will look at some less straightforward examples. Then, in a later post, we will examine limitations of Ember Data.</p>
+
+
+
+
+  </p>
+  <span class="meta">
+    
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2017-05-17T16:14:44-08:00" pubdate data-updated="true">May 17, 2017</time>
+    
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ember-data/'>ember-data</a>, <a class='category' href='/blog/categories/ember-dot-js/'>ember.js</a>
+  
+</span>
+
+
+  </span>
+
+  
+    <a class="full-article-link pull-right" rel="full-article" href="/blog/2017/05/17/how-ember-data-loads-async-relationships-part-2/">Read on &rarr;</a>
+  
+</article>
+
+        </div>
+      </div>
+      
+      
+      <div class="row">
+        <div class="col-md-offset-3 col-md-6">
+          <article>
+  <h2><a href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">How Ember Data Loads Async Relationships: Part 1</a></h2>
+  
+  <p>
+    <p><span class="embadge" data-start="2.12.0"><span></p>
+
+
+
+
+<p>Ember Data has two main ways to load asynchronous relationship data through adapters. It is not always obvious when or why Ember Data calls the adapter hooks that it does, or doesn&rsquo;t.</p>
+
+
+
+
+<p>In Part 1, we&rsquo;ll explore how Ember Data responds to a few different common scenarios. In later posts we&rsquo;ll look at some less-straight-forward examples.</p>
+
+
+
+
+  </p>
+  <span class="meta">
+    
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2017-05-05T16:02:46-08:00" pubdate data-updated="true">May 5, 2017</time>
+    
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ember-data/'>ember-data</a>, <a class='category' href='/blog/categories/ember-dot-js/'>ember.js</a>
+  
+</span>
+
+
+  </span>
+
+  
+    <a class="full-article-link pull-right" rel="full-article" href="/blog/2017/05/05/how-ember-data-loads-relationships-part-1/">Read on &rarr;</a>
+  
+</article>
+
+        </div>
+      </div>
+      
+      
+      <div class="row">
+        <div class="col-md-offset-3 col-md-6">
+          <article>
+  <h2><a href="/blog/2012/11/15/sending-morning-emails/">Sending Morning Emails</a></h2>
+  
+  <p>
+    <p>NOTE: I originally wrote this when I was still working on <a href="http://strideapp.com">Stride</a>. I&rsquo;ve reposted it here for posterity. Here is the <a href="https://web.archive.org/web/20130522081001/https://strideapp.com/blog/2012/11/sending-morning-emails/">original post</a>.</p>
+
+
+
+
+<p>Reliably delivering time-based emails (daily, weekly, etc.) to users has always been a little tricky for web-based applications. There are multiple possible failure points, and we need to contend with different time zones.</p>
+
+
+
+
+<p>Currently, Stride sends two time-based emails:</p>
+
+
+
+
+<ol>
+<li>Your Monday morning weekly recap</li>
+<li>Task reminders</li>
+</ol>
+
+
+
+
+<p>We wanted both of these emails to arrive in the user&rsquo;s inbox in the morning. At first, this seems like a simple specification; we&rsquo;ll just send the emails off at 7am.</p>
+
+
+
+
+<p>But hold on a minute — if we send the Monday morning email at 7am PST, users in New York won&rsquo;t get their email until 10am, and even worse, our users in Australia won&rsquo;t get it until 1am on Tuesday; that certainly isn&rsquo;t Monday morning. What if we send it early enough so that everyone gets it before Monday morning? Unfortunately, if we send the it at 7am in eastern Australia, our users in Hawaii will get their Monday morning email at 11am on Sunday. That just isn&rsquo;t going to cut it.</p>
+
+
+
+
+<p>We decided to batch up the emails and send them off depending on each user&rsquo;s time zone. Here&rsquo;s how it works:</p>
+
+
+
+
+  </p>
+  <span class="meta">
+    
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+<time datetime="2015-01-05T00:00:00-08:00" class="updated">Updated Janurary 1, 2015</time>
+    
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/rails/'>rails</a>
+  
+</span>
+
+
+  </span>
+
+  
+    <a class="full-article-link pull-right" rel="full-article" href="/blog/2012/11/15/sending-morning-emails/">Read on &rarr;</a>
+  
+</article>
+
+        </div>
+      </div>
+      
+      
+      <div class="row">
+        <div class="col-md-offset-3 col-md-6">
+          <article>
+  <h2><a href="/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes/">Using I18n and Draper to Render Database Attributes</a></h2>
+  
+  <p>
+    <p>Using I18n and Draper to Render Database Attributes</p>
+
+
+
+
+<p>TL;DR: Check out my additions to ApplicationDecorator <a href="https://gist.github.com/1338134">in this gist</a>.</p>
+
+
+
+
+<p>Update: This has been released as a gem: <a href="https://github.com/carnesmedia/olson">Olson</a>.</p>
+
+
+
+
+<p>When my models have an attribute that matters to the code (like <code>Admin#role</code> or <code>User#status</code>), I like to store the value as a string that makes sense as an identifier. For example, <code>User#status</code> might be <code>'active'</code> or <code>'awaiting_approval'</code>. However, when it comes time to render the admin&rsquo;s role or the users status in the view, we want to show &lsquo;Awaiting approval&rsquo; instead of &lsquo;awaiting_approval&rsquo;. Another example of this sort of thing is the <code>#type</code> attribute for STI.</p>
+
+
+
+
+<p><p>Ok, this isn’t too hard, we can just use <code>#humanize</code>. But, here’s what happens:</p>
+
+  </p>
+  <span class="meta">
+    
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2011-11-04T20:27:04-08:00" pubdate data-updated="true">November 4, 2011</time>
+    
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/rails/'>rails</a>
+  
+</span>
+
+
+  </span>
+
+  
+    <a class="full-article-link pull-right" rel="full-article" href="/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes/">Read on &rarr;</a>
+  
+</article>
+
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+
+<footer id="footer" class="her-row">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-1">
+  <a href="/"><h4>Home</h4></a>
+</div>
+
+<div class="col-md-2">
+  <div class="social-icon-list">
+    
+    <a href="https://twitter.com/amielmartin"><img src="/images/glyphicons_social_31_twitter.png"/></a>
+    
+
+    
+    <a href="https://github.com/amiel"><img src="/images/glyphicons_social_21_github.png"/></a>
+    
+
+    
+    <a href="https://linkedin.com/in/amielmartin"><img src="/images/glyphicons_social_17_linked_in.png"/></a>
+    
+
+    
+    <a href="mailto:amiel@amielmartin.com"><img src="/images/glyphicons_social_39_e-mail.png"/></a>
+    
+  </div>
+</div>
+
+    </div>
+  </div>
+</footer>
+
+
+  </body>
+</html>

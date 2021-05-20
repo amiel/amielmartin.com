@@ -1,0 +1,406 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Using I18n and Draper to Render Database Attributes - Amiel Martin</title>
+  <meta name="author" content="Amiel Martin">
+
+  
+  <meta name="description" content="Using I18n and Draper to Render Database Attributes November 4, 2011 in rails Using I18n and Draper to Render Database Attributes TL;DR: Check out &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="google-site-verification" content="UGd4WRAL2iSgwFqmybaK3Ck9a-1Jd-dH0PKG_PpGXts" />
+
+  
+  <link rel="canonical" href="http://amielmartin.com/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Amiel Martin" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-1309955-6']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+  <body>
+    <a href="/" class="home-icon">
+      <img src="/images/home.png"/>
+    </a>
+
+    <article role="article" class="full-single-article">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        <h1>Using I18n and Draper to Render Database Attributes</h1>
+        <div class="meta">
+          
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2011-11-04T20:27:04-08:00" pubdate data-updated="true">November 4, 2011</time>
+          
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/rails/'>rails</a>
+  
+</span>
+
+
+        </div>
+        <p>Using I18n and Draper to Render Database Attributes</p>
+
+<p>TL;DR: Check out my additions to ApplicationDecorator <a href="https://gist.github.com/1338134">in this gist</a>.</p>
+
+<p>Update: This has been released as a gem: <a href="https://github.com/carnesmedia/olson">Olson</a>.</p>
+
+<p>When my models have an attribute that matters to the code (like <code>Admin#role</code> or <code>User#status</code>), I like to store the value as a string that makes sense as an identifier. For example, <code>User#status</code> might be <code>'active'</code> or <code>'awaiting_approval'</code>. However, when it comes time to render the admin&rsquo;s role or the users status in the view, we want to show &lsquo;Awaiting approval&rsquo; instead of &lsquo;awaiting_approval&rsquo;. Another example of this sort of thing is the <code>#type</code> attribute for STI.</p>
+
+<p>Ok, this isn’t too hard, we can just use <code>#humanize</code>. But, here’s what happens: <!--More--></p>
+
+<figure class='code'><figcaption><span>In some views</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x"># Show a user-friendly version of our identifier</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">humanize</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Now we need to customize some of them, use I18n</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">t</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">humanize</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># But that&#39;s polluting our I18n namespace</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">t</span> <span class="ss">:&quot;user.status.</span><span class="si">#{</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span> <span class="si">}</span><span class="ss">&quot;</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">humanize</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Ok, this is getting out of hand, lets refactor this to the model</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status_string</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># This breaks down when you need to render the select field to edit this user</span>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="no">User</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">status</span><span class="p">:</span> <span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">status_string</span><span class="p">,</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># So, how &#39;bout a helper</span>
+</span><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">humanize_with_i18n</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="sx">%(user status)</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Not too bad</span>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="x"># Ah, this is a bit better</span>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="n">user_roles_for_select</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Model or helper code</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">User</span> <span class="o">&lt;</span> <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">status_string</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="n">status</span><span class="p">,</span> <span class="ss">scope</span><span class="p">:</span> <span class="sx">%w(user status)</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">status</span><span class="o">.</span><span class="n">humanize</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">another_thing_string</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Or something like:</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">UserHelper</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">humanize_with_i18n</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">scope</span> <span class="o">=</span> <span class="o">[]</span><span class="p">)</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="n">string</span><span class="p">,</span> <span class="ss">scope</span><span class="p">:</span> <span class="n">scope</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">string</span><span class="o">.</span><span class="n">humanize</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># The method prefix tells me that this should be in an object</span>
+</span><span class='line'>  <span class="c1"># But it doesn&#39;t belong in our model, does it?</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">user_roles_for_select</span>
+</span><span class='line'>    <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ok, let&rsquo;s be fair. All of these solutions are actually quite fine. In most cases Ya Ain&rsquo;t Gonna Need anything more complicated. The helper version handles most situations just fine.</p>
+
+<p>However, after a bunch of this I tend to end up with a bunch of methods in my model that seem to be somewhat presentation related, and/or methods in my helper that seem like they belong to an object and not in the &ldquo;global&rdquo; view namespace.</p>
+
+<h3>Enter decorators</h3>
+
+<p>A decorator (or presenter) is an object that holds the presentation logic for a model, so that the model can stick to the business logic. I&rsquo;ve been using a great gem called <a href="https://github.com/jcasimir/draper">Draper</a>. I won&rsquo;t go into too much detail about how to use Draper (check out the <a href="https://github.com/jcasimir/draper">Github readme</a> or <a href="http://railscasts.com/episodes/286-draper">Railscast</a>).</p>
+
+<p>Here&rsquo;s how you would implement the above pattern with Draper:</p>
+
+<figure class='code'><figcaption><span>user_decorator.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">UserDecorator</span> <span class="o">&lt;</span> <span class="no">ApplicationDecorator</span>
+</span><span class='line'>  <span class="n">decorates</span> <span class="ss">:user</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">status</span>
+</span><span class='line'>    <span class="c1"># self.model gives us the User</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="ss">:status</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># This could be moved to ApplicationDecorator (or ApplicationHelper),</span>
+</span><span class='line'>  <span class="c1"># but is shown here for simplicity.</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">humanize_with_i18n</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span class='line'>    <span class="no">I18n</span><span class="o">.</span><span class="n">t</span> <span class="n">value</span><span class="p">,</span> <span class="ss">scope</span><span class="p">:</span> <span class="o">[</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="n">attribute</span><span class="o">]</span><span class="p">,</span> <span class="ss">default</span><span class="p">:</span> <span class="n">value</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">status_options</span>
+</span><span class='line'>    <span class="no">User</span><span class="o">::</span><span class="no">STATUSES</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span> <span class="o">[</span><span class="n">humanize_with_i18n</span><span class="p">(</span><span class="ss">:status</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">s</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then, in our view:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">decorator</span><span class="o">.</span><span class="n">status</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">UserDecorator</span><span class="o">.</span><span class="n">status_options</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Bonus</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ApplicationHelper</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">current_user</span>
+</span><span class='line'>    <span class="k">super</span><span class="o">.</span><span class="n">decorator</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>My Abstractions</h3>
+
+<p>And now the reason for this post. I find that I use this pattern frequently, so I generalized it to <code>ApplicationDecorator</code>. It adds a class method <code>ApplicationDecorator.humanizes</code> that can be used in each decorator to define attributes that need automatic humanization.</p>
+
+<p>The full source can be found here: <a href="https://gist.github.com/1338134.">https://gist.github.com/1338134.</a></p>
+
+<p>Here&rsquo;s how you would use it:</p>
+
+<figure class='code'><figcaption><span>user_decorator.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">UserDecorator</span> <span class="o">&lt;</span> <span class="no">ApplicationDecorator</span>
+</span><span class='line'>  <span class="n">decorates</span> <span class="ss">:user</span>
+</span><span class='line'>  <span class="n">humanizes</span> <span class="ss">:status</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">status_options</span>
+</span><span class='line'>    <span class="n">options_for_select_with_i18n</span> <span class="ss">:status</span><span class="p">,</span> <span class="n">model_class</span><span class="o">::</span><span class="no">STATUS_OPTIONS</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>And in a view</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='erb'><span class='line'><span class="x">Status: </span><span class="cp">&lt;%=</span> <span class="n">current_user</span><span class="o">.</span><span class="n">status</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">&lt;%=</span> <span class="n">form</span><span class="o">.</span><span class="n">input</span> <span class="ss">:status</span><span class="p">,</span> <span class="ss">collection</span><span class="p">:</span> <span class="no">UserDecorator</span><span class="o">.</span><span class="n">status_options</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>To Conclude</h3>
+
+<p>I like this because each layer is really simple and really focuses on only what it needs to.</p>
+
+<p>The view doesn&rsquo;t have to know that that data is not user-friendly.
+The model isn&rsquo;t polluted with methods designed for the view.
+There isn&rsquo;t much complexity or black-magic to make this abstraction simple.
+If this pattern works out in my current project I will probably pull this out into a gem. Would anyone else find this useful? If I do I&rsquo;ll be looking for name suggestions&hellip;</p>
+
+
+        <hr class="divider-short"/>
+
+        
+        <section>
+          <h1>Comments</h1>
+          <div id="disqus_thread" aria-live="polite"></div>
+        </section>
+        
+      </div>
+    </div>
+  </div>
+</article>
+
+<hr class="divider-short"/>
+
+<div class="archive-link">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        
+
+        
+          <a class="pull-right" href="/blog/2012/11/15/sending-morning-emails/" title="Next Post: Sending Morning Emails">Next: Sending Morning Emails &raquo;</a>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="//embadge.io/v1/badge.js" type="text/javascript"></script>
+
+
+
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'amielmartin';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amielmartin.com/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes/';
+        var disqus_url = 'http://amielmartin.com/blog/2011/11/04/using-i18n-and-draper-to-render-database-attributes/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<footer id="footer" class="her-row">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-1">
+  <a href="/"><h4>Home</h4></a>
+</div>
+
+<div class="col-md-2">
+  <div class="social-icon-list">
+    
+    <a href="https://twitter.com/amielmartin"><img src="/images/glyphicons_social_31_twitter.png"/></a>
+    
+
+    
+    <a href="https://github.com/amiel"><img src="/images/glyphicons_social_21_github.png"/></a>
+    
+
+    
+    <a href="https://linkedin.com/in/amielmartin"><img src="/images/glyphicons_social_17_linked_in.png"/></a>
+    
+
+    
+    <a href="mailto:amiel@amielmartin.com"><img src="/images/glyphicons_social_39_e-mail.png"/></a>
+    
+  </div>
+</div>
+
+    </div>
+  </div>
+</footer>
+
+
+  </body>
+</html>
